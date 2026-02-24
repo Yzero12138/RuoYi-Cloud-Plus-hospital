@@ -6,7 +6,7 @@ services:
       # 时区上海
       TZ: Asia/Shanghai
       # root 密码
-      MYSQL_ROOT_PASSWORD: ruoyi123
+      MYSQL_ROOT_PASSWORD: P@ssw0rd.172239
       # 初始化数据库
       MYSQL_DATABASE: ry-cloud
     ports:
@@ -73,9 +73,9 @@ services:
       # 时区上海
       TZ: Asia/Shanghai
       # 管理后台用户名
-      MINIO_ROOT_USER: ruoyi
+      MINIO_ROOT_USER: qcyy
       # 管理后台密码，最小8个字符
-      MINIO_ROOT_PASSWORD: ruoyi123
+      MINIO_ROOT_PASSWORD: P@ssw0rd.172239
       # https需要指定域名
       #MINIO_SERVER_URL: "https://xxx.com:9000"
       #MINIO_BROWSER_REDIRECT_URL: "https://xxx.com:9001"
@@ -385,8 +385,8 @@ services:
     build:
       context: ./rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: ruoyi
-      RABBITMQ_DEFAULT_PASS: ruoyi123
+      RABBITMQ_DEFAULT_USER: qcyy
+      RABBITMQ_DEFAULT_PASS: P@ssw0rd.172239
     ports:
       - "15672:15672" # 管理界面端口
       - "5672:5672"   # api 端口

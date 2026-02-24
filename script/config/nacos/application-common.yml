@@ -104,8 +104,8 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
-    username: ruoyi
-    password: ruoyi123
+    username: qcyy
+    password: P@ssw0rd.172239
 
   # redis通用配置 子服务可以自行配置进行覆盖
   data:
@@ -113,7 +113,7 @@ spring:
       host: localhost
       port: 6379
       # redis 密码必须配置
-      password: ruoyi123
+      password: P@ssw0rd.172239
       database: 0
       # 需要使用数字
       timeout: 10000
