@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    dynamic:
+      # 设置默认数据源组
+      primary: data-center
+      datasource:
+        data-center:
+          type: ${spring.datasource.type}
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: ${datasource.data-center.url}
+          username: ${datasource.data-center.username}
+          password: ${datasource.data-center.password}

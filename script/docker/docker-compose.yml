@@ -278,6 +278,22 @@ services:
     network_mode: "host"
 
 
+  ruoyi-data-center:
+    image: ruoyi/ruoyi-data-center:2.5.3
+    container_name: ruoyi-data-center
+    environment:
+      # 时区上海
+      TZ: Asia/Shanghai
+    ports:
+      - "9206:9206"
+    volumes:
+      # 配置文件
+      - /docker/ruoyi-data-center/logs/:/ruoyi/data-center/logs
+      # skywalking 探针
+      - /docker/skywalking/agent/:/ruoyi/skywalking/agent
+    privileged: true
+    network_mode: "host"
+
 #################################################################################################
 #################################### 以下为扩展根据需求搭建 #########################################
 #################################################################################################

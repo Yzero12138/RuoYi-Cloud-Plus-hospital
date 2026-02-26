@@ -20,7 +20,7 @@ spring:
   cloud:
     # 网关配置
     gateway:
-      # 打印请求日志(自定义)
+      # 打印请求日志(自定�?
       requestLog: true
       server:
         webflux:
@@ -64,6 +64,12 @@ spring:
                 - Path=/workflow/**
               filters:
                 - StripPrefix=1
+            - id: ruoyi-data-center
+              uri: lb://ruoyi-data-center
+              predicates:
+                - Path=/data-center/**
+              filters:
+                - StripPrefix=1
             # warm-flow服务
             - id: warm-flow
               uri: lb://ruoyi-workflow
@@ -83,3 +89,4 @@ spring:
                 - Path=/test-mq/**
               filters:
                 - StripPrefix=1
+

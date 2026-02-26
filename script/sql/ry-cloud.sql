@@ -1,4 +1,4 @@
--- ----------------------------
+﻿-- ----------------------------
 -- 第三方平台授权表
 -- ----------------------------
 create table sys_social
@@ -440,6 +440,16 @@ insert into sys_menu VALUES ('11641', '请假申请修改', '11638', '3', '#', '
 insert into sys_menu VALUES ('11642', '请假申请删除', '11638', '4', '#', '', '', '1', '0', 'F', '0', '0', 'workflow:leave:remove', '#', 103, 1, sysdate(), NULL, NULL, '');
 insert into sys_menu VALUES ('11643', '请假申请导出', '11638', '5', '#', '', '', '1', '0', 'F', '0', '0', 'workflow:leave:export', '#', 103, 1, sysdate(), NULL, NULL, '');
 
+-- 肾内科台账菜单
+insert into sys_menu values ('2135', '台账', '2001', '8', 'ledger', 'data-center/nephrology/ledger/index', '', 1, 0, 'C', '0', '0', 'data-center:nephrology:ledger:list', 'table', 103, 1, sysdate(), null, null, '肾内科台账菜单');
+insert into sys_menu values ('2136', '台账维护', '2001', '9', 'ledger-maintain', 'data-center/nephrology/ledger-maintain/index', '', 1, 0, 'C', '0', '0', 'data-center:nephrology:ledger-maintain:list', 'tree-table', 103, 1, sysdate(), null, null, '肾内科台账维护菜单');
+insert into sys_menu values ('2137', '台账详情', '2135', '1', 'detail', 'data-center/nephrology/ledger/detail/index', '', 1, 1, 'C', '1', '0', 'data-center:nephrology:ledger:detail:list', '#', 103, 1, sysdate(), null, null, '/data-center/nephrology/ledger');
+insert into sys_menu values ('2138', '台账详情查询', '2135', '1', '#', '', '', 1, 0, 'F', '0', '0', 'data-center:nephrology:ledger:detail:list', '#', 103, 1, sysdate(), null, null, '');
+insert into sys_menu values ('2139', '台账维护查询', '2136', '1', '#', '', '', 1, 0, 'F', '0', '0', 'data-center:nephrology:ledger-maintain:query', '#', 103, 1, sysdate(), null, null, '');
+insert into sys_menu values ('2140', '台账维护新增', '2136', '2', '#', '', '', 1, 0, 'F', '0', '0', 'data-center:nephrology:ledger-maintain:add', '#', 103, 1, sysdate(), null, null, '');
+insert into sys_menu values ('2141', '台账维护修改', '2136', '3', '#', '', '', 1, 0, 'F', '0', '0', 'data-center:nephrology:ledger-maintain:edit', '#', 103, 1, sysdate(), null, null, '');
+insert into sys_menu values ('2142', '台账维护删除', '2136', '4', '#', '', '', 1, 0, 'F', '0', '0', 'data-center:nephrology:ledger-maintain:remove', '#', 103, 1, sysdate(), null, null, '');
+
 -- ----------------------------
 -- 6、用户和角色关联表  用户N-1角色
 -- ----------------------------
@@ -574,6 +584,17 @@ insert into sys_role_menu values ('3', '11641');
 insert into sys_role_menu values ('3', '11642');
 insert into sys_role_menu values ('3', '11643');
 insert into sys_role_menu values ('3', '11701');
+insert into sys_role_menu values ('3', '2132');
+insert into sys_role_menu values ('3', '2133');
+insert into sys_role_menu values ('3', '2134');
+insert into sys_role_menu values ('3', '2135');
+insert into sys_role_menu values ('3', '2136');
+insert into sys_role_menu values ('3', '2137');
+insert into sys_role_menu values ('3', '2138');
+insert into sys_role_menu values ('3', '2139');
+insert into sys_role_menu values ('3', '2140');
+insert into sys_role_menu values ('3', '2141');
+insert into sys_role_menu values ('3', '2142');
 insert into sys_role_menu values ('4', '5');
 insert into sys_role_menu values ('4', '1500');
 insert into sys_role_menu values ('4', '1501');

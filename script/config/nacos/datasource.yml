@@ -17,6 +17,10 @@ datasource:
     url: jdbc:mysql://172.16.100.239:3306/ry-workflow?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true
     username: root
     password: P@ssw0rd.172239
+  data-center:
+    url: jdbc:mysql://172.16.100.239:3306/qc-data-warehouse?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true
+    username: root
+    password: P@ssw0rd.172239
 #  system-oracle:
 #    url: jdbc:oracle:thin:@//172.16.100.239:1521/XE
 #    username: ROOT
