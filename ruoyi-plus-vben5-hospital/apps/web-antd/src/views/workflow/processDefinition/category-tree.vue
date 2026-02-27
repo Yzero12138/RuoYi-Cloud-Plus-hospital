@@ -3,7 +3,7 @@ import type { PropType } from 'vue';
 
 import type { CategoryTree } from '#/api/workflow/category/model';
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref, useAttrs } from 'vue';
 
 import { SyncOutlined } from '@ant-design/icons-vue';
 import { InputSearch, Skeleton, Tree } from 'ant-design-vue';
@@ -33,6 +33,9 @@ const searchValue = defineModel('searchValue', {
   default: '',
 });
 
+const attrs = useAttrs();
+const attrsClass = computed(() => String(attrs.class ?? ''));
+
 const categoryTreeArray = ref<CategoryTree[]>([]);
 /** 骨架屏加载 */
 const showTreeSkeleton = ref<boolean>(true);
@@ -57,7 +60,7 @@ onMounted(loadTree);
 </script>
 
 <template>
-  <div :class="$attrs.class">
+  <div :class="attrsClass">
     <Skeleton
       :loading="showTreeSkeleton"
       :paragraph="{ rows: 8 }"
@@ -87,7 +90,6 @@ onMounted(loadTree);
             v-bind="$attrs"
             v-if="categoryTreeArray.length > 0"
             v-model:selected-keys="selectCode"
-            :class="$attrs.class"
             :field-names="{ title: 'label', key: 'id' }"
             :show-line="{ showLeafIcon: false }"
             :tree-data="categoryTreeArray"

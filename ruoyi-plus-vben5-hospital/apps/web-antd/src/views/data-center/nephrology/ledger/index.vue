@@ -8,6 +8,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { Page } from '@vben/common-ui';
+import { message } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { nephrologyLedgerList } from '#/api/data-center/nephrology/ledger';
@@ -102,8 +103,14 @@ function toDetail(row?: NephrologyLedgerCountItem) {
   if (!row?.ledgerCode) {
     return;
   }
+  const targetPath = '/data-center/nephrology/ledger/detail';
+  const resolved = router.resolve({ path: targetPath });
+  if (!resolved.matched.length) {
+    message.warning('详情页路由未加载（可能缺少菜单权限），请联系管理员');
+    return;
+  }
   router.push({
-    path: '/data-center/nephrology/ledger/detail',
+    path: targetPath,
     query: {
       ledgerCode: row.ledgerCode,
       ledgerName: row.ledgerName,
@@ -124,6 +131,10 @@ function findChildByType(
 
 function toSummaryDetail(row: NephrologyLedgerCountItem, nodeType: string) {
   const target = findChildByType(row, nodeType);
+  if (!target) {
+    message.info('该指标未配置可查询的明细');
+    return;
+  }
   toDetail(target);
 }
 
@@ -179,5 +190,10 @@ const tableTitle = '台账';
 
 .count-link {
   color: #1677ff;
+  cursor: pointer;
+}
+
+.count-link:hover {
+  text-decoration: underline;
 }
 </style>

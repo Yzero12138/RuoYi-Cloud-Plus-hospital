@@ -449,6 +449,11 @@ insert into sys_menu values ('2139', '台账维护查询', '2136', '1', '#', '',
 insert into sys_menu values ('2140', '台账维护新增', '2136', '2', '#', '', '', 1, 0, 'F', '0', '0', 'data-center:nephrology:ledger-maintain:add', '#', 103, 1, sysdate(), null, null, '');
 insert into sys_menu values ('2141', '台账维护修改', '2136', '3', '#', '', '', 1, 0, 'F', '0', '0', 'data-center:nephrology:ledger-maintain:edit', '#', 103, 1, sysdate(), null, null, '');
 insert into sys_menu values ('2142', '台账维护删除', '2136', '4', '#', '', '', 1, 0, 'F', '0', '0', 'data-center:nephrology:ledger-maintain:remove', '#', 103, 1, sysdate(), null, null, '');
+insert into sys_menu values ('2143', '台账查询配置', '2001', '10', 'ledger-query', 'data-center/nephrology/ledger-query/index', '', 1, 0, 'C', '0', '0', 'data-center:nephrology:ledger-query:list', 'code', 103, 1, sysdate(), null, null, '肾内科台账查询配置菜单');
+insert into sys_menu values ('2144', '台账查询配置查询', '2143', '1', '#', '', '', 1, 0, 'F', '0', '0', 'data-center:nephrology:ledger-query:query', '#', 103, 1, sysdate(), null, null, '');
+insert into sys_menu values ('2145', '台账查询配置新增', '2143', '2', '#', '', '', 1, 0, 'F', '0', '0', 'data-center:nephrology:ledger-query:add', '#', 103, 1, sysdate(), null, null, '');
+insert into sys_menu values ('2146', '台账查询配置修改', '2143', '3', '#', '', '', 1, 0, 'F', '0', '0', 'data-center:nephrology:ledger-query:edit', '#', 103, 1, sysdate(), null, null, '');
+insert into sys_menu values ('2147', '台账查询配置删除', '2143', '4', '#', '', '', 1, 0, 'F', '0', '0', 'data-center:nephrology:ledger-query:remove', '#', 103, 1, sysdate(), null, null, '');
 
 -- ----------------------------
 -- 6、用户和角色关联表  用户N-1角色
@@ -595,6 +600,11 @@ insert into sys_role_menu values ('3', '2139');
 insert into sys_role_menu values ('3', '2140');
 insert into sys_role_menu values ('3', '2141');
 insert into sys_role_menu values ('3', '2142');
+insert into sys_role_menu values ('3', '2143');
+insert into sys_role_menu values ('3', '2144');
+insert into sys_role_menu values ('3', '2145');
+insert into sys_role_menu values ('3', '2146');
+insert into sys_role_menu values ('3', '2147');
 insert into sys_role_menu values ('4', '5');
 insert into sys_role_menu values ('4', '1500');
 insert into sys_role_menu values ('4', '1501');

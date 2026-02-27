@@ -23,6 +23,19 @@ interface DrawerProps {
   update: boolean;
 }
 
+interface LedgerTreeNode {
+  id?: number;
+  ledgerCode?: string;
+  ledgerName?: string;
+  children?: LedgerTreeNode[];
+}
+
+interface TreeOption {
+  label: string;
+  value: number;
+  children?: TreeOption[];
+}
+
 const emit = defineEmits<{ reload: [] }>();
 
 const isUpdate = ref(false);
@@ -43,14 +56,12 @@ const [BasicForm, formApi] = useVbenForm({
   wrapperClass: 'grid-cols-2',
 });
 
-function buildTreeOptions(list: any[] = []) {
-  return list.map((item) => {
-    const children = item.children?.length
-      ? buildTreeOptions(item.children)
-      : undefined;
+function buildTreeOptions(list: LedgerTreeNode[] = []): TreeOption[] {
+  return list.map((item): TreeOption => {
+    const children = item.children?.length ? buildTreeOptions(item.children) : undefined;
     return {
       label: `${item.ledgerName ?? ''}${item.ledgerCode ? ` (${item.ledgerCode})` : ''}`,
-      value: item.id,
+      value: Number(item.id ?? 0),
       children,
     };
   });

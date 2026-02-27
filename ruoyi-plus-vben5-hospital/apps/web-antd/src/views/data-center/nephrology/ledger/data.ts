@@ -35,6 +35,19 @@ const DISCHARGE_TIME_TYPE_OPTIONS = [
   { label: TEXT.month, value: 'month' },
 ];
 
+function getDefaultDischargeTimeValue(type?: string) {
+  if (type === 'month') {
+    return dayjs().format('YYYY-MM');
+  }
+  if (type === 'quarter') {
+    const year = dayjs().year();
+    const month = dayjs().month() + 1;
+    const quarter = Math.floor((month - 1) / 3) + 1;
+    return `${year}-Q${quarter}`;
+  }
+  return `${dayjs().year()}`;
+}
+
 function buildYearOptions() {
   const currentYear = dayjs().year();
   return Array.from({ length: 10 }).map((_, index) => {
@@ -86,8 +99,8 @@ export const querySchema: FormSchemaGetter = () => [
     componentProps: (model) => ({
       allowClear: false,
       options: DISCHARGE_TIME_TYPE_OPTIONS,
-      onChange: () => {
-        model.dischargeTimeValue = undefined;
+      onChange: (value: string) => {
+        model.dischargeTimeValue = getDefaultDischargeTimeValue(value);
       },
     }),
     defaultValue: defaultDischargeTimeType,
@@ -97,6 +110,7 @@ export const querySchema: FormSchemaGetter = () => [
   {
     component: 'Select',
     componentProps: (model) => ({
+      allowClear: false,
       options: getDischargeTimeValueOptions(model.dischargeTimeType),
       placeholder: TEXT.placeholderTime,
     }),
@@ -106,6 +120,7 @@ export const querySchema: FormSchemaGetter = () => [
     },
     fieldName: 'dischargeTimeValue',
     label: TEXT.dischargeTime,
+    rules: 'required',
   },
 ];
 

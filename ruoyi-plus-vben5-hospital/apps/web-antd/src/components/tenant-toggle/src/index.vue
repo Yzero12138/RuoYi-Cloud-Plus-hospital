@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { MessageType } from 'ant-design-vue/es/message';
 import type { SelectHandler } from 'ant-design-vue/es/vc-select/Select';
+import type { DefaultOptionType } from 'ant-design-vue/es/select';
 
-import type { TenantOption } from '#/api';
 
 import { computed, onMounted, ref, shallowRef, unref } from 'vue';
 import { useRoute } from 'vue-router';
@@ -125,8 +125,13 @@ async function onDeselect() {
  * @param input 输入内容
  * @param option 选项
  */
-function filterOption(input: string, option: TenantOption) {
-  return option.companyName.toLowerCase().includes(input.toLowerCase());
+function filterOption(input: string, option?: DefaultOptionType) {
+  const raw = option as unknown;
+  const companyName =
+    typeof raw === 'object' && raw !== null && 'companyName' in raw
+      ? String((raw as { companyName?: unknown }).companyName ?? '')
+      : String(option?.label ?? '');
+  return companyName.toLowerCase().includes(input.toLowerCase());
 }
 </script>
 

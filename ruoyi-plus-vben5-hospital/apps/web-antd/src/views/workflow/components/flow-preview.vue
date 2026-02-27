@@ -35,6 +35,7 @@ const params = {
 const url = `${import.meta.env.VITE_GLOB_API_URL}/warm-flow-ui/index.html?${stringify(params)}`;
 
 const { iframeRef } = useWarmflowIframe();
+void iframeRef;
 </script>
 
 <template>

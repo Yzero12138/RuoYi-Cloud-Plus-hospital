@@ -23,6 +23,19 @@ const localRoutes: RouteRecordStringComponent[] = [
     name: 'Profile',
     path: '/profile',
   },
+  {
+    component: '/data-center/nephrology/ledger/detail/index',
+    meta: {
+      title: '台账详情',
+      hideInMenu: true,
+      keepAlive: true,
+      activePath: '/data-center/nephrology/ledger',
+    },
+    // Backend route name convention: Capitalize(path) + menuId
+    // Menu seed: menu_id=2137, path='detail' -> 'Detail2137'
+    name: 'Detail2137',
+    path: '/data-center/nephrology/ledger/detail',
+  },
 ];
 
 /**

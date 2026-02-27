@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { EChartsOption } from 'echarts';
 
 // import * as echarts from 'echarts';
 import { onMounted, ref } from 'vue';
@@ -16,10 +15,11 @@ defineOptions({ name: 'Isp' });
 
 const ispRef = ref<EchartsUIType>();
 const { renderEcharts } = useEcharts(ispRef);
+type ChartOption = Parameters<typeof renderEcharts>[0];
 
 onMounted(async () => {
   const data = await ispInfoList();
-  const options: EChartsOption = {
+  const options: ChartOption = {
     legend: {
       left: 'left',
       orient: 'vertical',

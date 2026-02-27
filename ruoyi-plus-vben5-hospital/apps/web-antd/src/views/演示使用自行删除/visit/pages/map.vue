@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { EChartsOption } from 'echarts';
 
 // import * as echarts from 'echarts';
 import { onMounted, ref } from 'vue';
@@ -19,6 +18,7 @@ defineOptions({ name: 'VisitMap' });
 
 const mapRef = ref<EchartsUIType>();
 const { renderEcharts } = useEcharts(mapRef);
+type ChartOption = Parameters<typeof renderEcharts>[0];
 
 function transformData(data: Temp[]) {
   const nameList: string[] = chinaMap.features.map(
@@ -46,7 +46,7 @@ onMounted(async () => {
     null,
     data.map((item) => item.value),
   );
-  const options: EChartsOption = {
+  const options: ChartOption = {
     series: [
       {
         data,

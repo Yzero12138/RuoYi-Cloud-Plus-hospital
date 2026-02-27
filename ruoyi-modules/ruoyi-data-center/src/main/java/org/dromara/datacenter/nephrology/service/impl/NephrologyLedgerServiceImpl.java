@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.dromara.common.core.utils.StringUtils;
 import org.dromara.common.mybatis.core.page.PageQuery;
 import org.dromara.common.mybatis.core.page.TableDataInfo;
@@ -24,6 +25,7 @@ import org.dromara.datacenter.nephrology.mapper.NephrologyLedgerQueryMapper;
 import org.dromara.datacenter.nephrology.service.INephrologyLedgerService;
 import org.dromara.datacenter.nephrology.util.NephrologyTimeRangeUtils;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.time.Year;
 import java.util.stream.Collectors;
 
 /**
@@ -44,6 +47,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Service
 @DS("data-center")
+@Slf4j
 public class NephrologyLedgerServiceImpl implements INephrologyLedgerService {
 
     private final NephrologyLedgerItemMapper ledgerItemMapper;
@@ -63,7 +67,7 @@ public class NephrologyLedgerServiceImpl implements INephrologyLedgerService {
             return List.of();
         }
 
-        NephrologyTimeRangeUtils.DateRange range = NephrologyTimeRangeUtils.parse(bo.getDischargeTimeType(), bo.getDischargeTimeValue());
+        NephrologyTimeRangeUtils.DateRange range = resolveRange(bo.getDischargeTimeType(), bo.getDischargeTimeValue());
         Map<String, NephrologyLedgerQuery> queryMap = loadQueryConfigs(ledgerItems);
         Map<String, Long> countCache = new HashMap<>();
 
@@ -117,7 +121,7 @@ public class NephrologyLedgerServiceImpl implements INephrologyLedgerService {
             return new TableDataInfo<>(List.of(), 0);
         }
 
-        NephrologyTimeRangeUtils.DateRange range = NephrologyTimeRangeUtils.parse(bo.getDischargeTimeType(), bo.getDischargeTimeValue());
+        NephrologyTimeRangeUtils.DateRange range = resolveRange(bo.getDischargeTimeType(), bo.getDischargeTimeValue());
         NephrologyLedgerQuery queryConfig = getActiveQueryByCode(ledgerItem.getQueryTarget());
         if (queryConfig != null) {
             return queryDetailBySql(queryConfig, bo, pageQuery, range);
@@ -215,7 +219,26 @@ public class NephrologyLedgerServiceImpl implements INephrologyLedgerService {
             return count == null ? 0L : count;
         } catch (EmptyResultDataAccessException ex) {
             return 0L;
+        } catch (DataAccessException ex) {
+            // Query SQL is user-configurable; fail closed and treat as 0.
+            // The exception is logged so misconfigured SQL can be corrected.
+            String preview = sql;
+            if (preview != null && preview.length() > 256) {
+                preview = preview.substring(0, 256);
+            }
+            log.warn("Ledger count SQL execute failed, return 0. sql={}", preview, ex);
+            return 0L;
         }
+    }
+
+    private NephrologyTimeRangeUtils.DateRange resolveRange(String type, String value) {
+        String resolvedType = StringUtils.defaultIfBlank(type, "year");
+        String resolvedValue = StringUtils.defaultIfBlank(value, String.valueOf(Year.now().getValue()));
+        NephrologyTimeRangeUtils.DateRange range = NephrologyTimeRangeUtils.parse(resolvedType, resolvedValue);
+        if (range != null) {
+            return range;
+        }
+        return NephrologyTimeRangeUtils.parse("year", String.valueOf(Year.now().getValue()));
     }
 
     private Map<String, Object> buildQueryParams(NephrologyTimeRangeUtils.DateRange range, NephrologyLedgerDetailBo bo) {

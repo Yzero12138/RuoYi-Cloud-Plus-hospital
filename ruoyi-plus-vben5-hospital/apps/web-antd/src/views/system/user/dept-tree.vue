@@ -3,7 +3,7 @@ import type { PropType } from 'vue';
 
 import type { DeptTree } from '#/api/system/user/model';
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref, useAttrs } from 'vue';
 
 import { SyncOutlined } from '@ant-design/icons-vue';
 import { Empty, InputSearch, Skeleton, Tree } from 'ant-design-vue';
@@ -49,6 +49,9 @@ const searchValue = defineModel('searchValue', {
   default: '',
 });
 
+const attrs = useAttrs();
+const attrsClass = computed(() => String(attrs.class ?? ''));
+
 /** 部门数据源 */
 type DeptTreeArray = DeptTree[];
 const deptTreeArray = ref<DeptTreeArray>([]);
@@ -75,7 +78,7 @@ onMounted(loadTree);
 </script>
 
 <template>
-  <div :class="$attrs.class">
+  <div :class="attrsClass">
     <Skeleton
       :loading="showTreeSkeleton"
       :paragraph="{ rows: 8 }"
@@ -108,7 +111,6 @@ onMounted(loadTree);
             v-bind="$attrs"
             v-if="deptTreeArray.length > 0"
             v-model:selected-keys="selectDeptId"
-            :class="$attrs.class"
             :field-names="{ title: 'label', key: 'id' }"
             :show-line="{ showLeafIcon: false }"
             :tree-data="deptTreeArray"

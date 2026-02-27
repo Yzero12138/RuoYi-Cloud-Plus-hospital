@@ -59,6 +59,7 @@ export const useNotifyStore = defineStore(
         });
 
         notificationList.value.unshift({
+          id: `${userId.value}-${Date.now()}`,
           // avatar: `https://api.multiavatar.com/${random(0, 10_000)}.png`, 随机头像
           avatar: SvgMessageUrl,
           date: dayjs().format('YYYY-MM-DD HH:mm:ss'),
