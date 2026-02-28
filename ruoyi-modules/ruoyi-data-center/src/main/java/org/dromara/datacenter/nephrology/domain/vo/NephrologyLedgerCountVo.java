@@ -24,9 +24,9 @@ public class NephrologyLedgerCountVo implements Serializable {
     private Integer sortOrder;
 
     /**
-     * Leaf count value.
+     * Display count value.
      */
-    private Long countValue;
+    private String countValue;
 
     /**
      * Summary count value on parent rows.

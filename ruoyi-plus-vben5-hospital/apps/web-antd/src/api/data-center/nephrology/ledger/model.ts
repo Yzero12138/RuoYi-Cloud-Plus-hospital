@@ -6,7 +6,7 @@
   nodeType?: string;
   queryTarget?: string;
   sortOrder?: number;
-  countValue?: number;
+  countValue?: number | string;
   numeratorCount?: number;
   denominatorCount?: number;
   queryable?: boolean;

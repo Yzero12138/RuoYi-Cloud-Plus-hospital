@@ -30,6 +30,8 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -81,7 +83,7 @@ public class NephrologyLedgerServiceImpl implements INephrologyLedgerService {
             vo.setNodeType(item.getNodeType());
             vo.setQueryTarget(item.getQueryTarget());
             vo.setSortOrder(item.getSortOrder());
-            vo.setCountValue(calculateLeafCount(item, range, queryMap, countCache));
+            vo.setCountValue(String.valueOf(calculateLeafCount(item, range, queryMap, countCache)));
             vo.setQueryable(isQueryable(item, queryMap));
             vo.setChildren(new ArrayList<>());
             nodeMap.put(vo.getId(), vo);
@@ -362,7 +364,7 @@ public class NephrologyLedgerServiceImpl implements INephrologyLedgerService {
     private void aggregateCount(NephrologyLedgerCountVo node) {
         List<NephrologyLedgerCountVo> children = node.getChildren();
         if (children == null || children.isEmpty()) {
-            long count = Objects.requireNonNullElse(node.getCountValue(), 0L);
+            long count = parseCount(node.getCountValue());
             if (NephrologyLedgerConstants.NODE_TYPE_NUMERATOR.equals(node.getNodeType())) {
                 node.setNumeratorCount(count);
                 node.setDenominatorCount(0L);
@@ -373,6 +375,7 @@ public class NephrologyLedgerServiceImpl implements INephrologyLedgerService {
                 node.setNumeratorCount(count);
                 node.setDenominatorCount(0L);
             }
+            node.setCountValue(formatCountValue(node.getQueryTarget(), node.getNumeratorCount(), node.getDenominatorCount()));
             return;
         }
 
@@ -381,9 +384,9 @@ public class NephrologyLedgerServiceImpl implements INephrologyLedgerService {
         for (NephrologyLedgerCountVo child : children) {
             aggregateCount(child);
             if (NephrologyLedgerConstants.NODE_TYPE_NUMERATOR.equals(child.getNodeType())) {
-                numerator += Objects.requireNonNullElse(child.getCountValue(), 0L);
+                numerator += Objects.requireNonNullElse(child.getNumeratorCount(), 0L);
             } else if (NephrologyLedgerConstants.NODE_TYPE_DENOMINATOR.equals(child.getNodeType())) {
-                denominator += Objects.requireNonNullElse(child.getCountValue(), 0L);
+                denominator += Objects.requireNonNullElse(child.getDenominatorCount(), 0L);
             } else {
                 numerator += Objects.requireNonNullElse(child.getNumeratorCount(), 0L);
                 denominator += Objects.requireNonNullElse(child.getDenominatorCount(), 0L);
@@ -391,8 +394,32 @@ public class NephrologyLedgerServiceImpl implements INephrologyLedgerService {
         }
         node.setNumeratorCount(numerator);
         node.setDenominatorCount(denominator);
-        node.setCountValue(denominator > 0 ? denominator : numerator);
+        node.setCountValue(formatCountValue(node.getQueryTarget(), numerator, denominator));
         node.setQueryable(false);
+    }
+
+    private long parseCount(String countValue) {
+        if (StringUtils.isBlank(countValue)) {
+            return 0L;
+        }
+        try {
+            return Long.parseLong(countValue);
+        } catch (NumberFormatException ex) {
+            return 0L;
+        }
+    }
+
+    private String formatCountValue(String queryTarget, long numerator, long denominator) {
+        if (!NephrologyLedgerConstants.QUERY_TARGET_NONE.equals(queryTarget)) {
+            return String.valueOf(denominator > 0 ? denominator : numerator);
+        }
+        if (denominator <= 0) {
+            return String.valueOf(numerator);
+        }
+        BigDecimal percent = BigDecimal.valueOf(numerator)
+            .multiply(BigDecimal.valueOf(100))
+            .divide(BigDecimal.valueOf(denominator), 2, RoundingMode.HALF_UP);
+        return percent.stripTrailingZeros().toPlainString() + "%";
     }
 
     private void sortTree(List<NephrologyLedgerCountVo> list, Comparator<NephrologyLedgerCountVo> comparator) {
