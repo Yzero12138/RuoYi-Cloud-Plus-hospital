@@ -1,0 +1,13 @@
+hospital-qc:
+  # AES secret for external datasource password encryption.
+  # Production should override via environment variable.
+  aes-secret: ${HOSPITAL_QC_AES_SECRET:change-me-hospital-qc-secret}
+  # SQL execution timeout for SQL test and count calculation (seconds).
+  sql-timeout-seconds: ${HOSPITAL_QC_SQL_TIMEOUT_SECONDS:10}
+  # Max sample rows returned by SQL test.
+  sql-test-limit: ${HOSPITAL_QC_SQL_TEST_LIMIT:50}
+  # Dashboard count cache ttl (seconds).
+  dashboard-cache-seconds: ${HOSPITAL_QC_DASHBOARD_CACHE_SECONDS:300}
+  # SQLServer TLS mode: TLS12 | LEGACY_NO_ENCRYPT | LEGACY_TLS10
+  # If SQLServer cannot upgrade to TLS1.2, use LEGACY_NO_ENCRYPT as temporary workaround.
+  sqlserver-tls-mode: ${HOSPITAL_QC_SQLSERVER_TLS_MODE:TLS12}

@@ -1,0 +1,162 @@
+﻿<script setup lang="ts">
+import type { VbenFormProps } from '@vben/common-ui';
+
+import type { VxeGridProps } from '#/adapter/vxe-table';
+import type { HospitalQcReportRow } from '#/api/data-center/hospital-qc/report/model';
+
+import { nextTick, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+
+import { Page } from '@vben/common-ui';
+
+import dayjs from 'dayjs';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import { hospitalQcDashboardOptions } from '#/api/data-center/hospital-qc/dashboard';
+import { hospitalQcReportSummary } from '#/api/data-center/hospital-qc/report';
+
+import { reportColumns, reportQuerySchema } from './data';
+
+const route = useRoute();
+type HospitalQcReportRowWithKey = HospitalQcReportRow & { rowKey: string };
+const QUARTER_VALUE_PATTERN = /^\d{4}-Q[1-4]$/;
+const MONTH_VALUE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+const formOptions: VbenFormProps = {
+  commonConfig: {
+    labelWidth: 84,
+    componentProps: {
+      allowClear: true,
+    },
+  },
+  schema: reportQuerySchema(),
+  wrapperClass: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
+};
+
+const gridOptions: VxeGridProps = {
+  columns: reportColumns,
+  height: 'auto',
+  keepSource: true,
+  pagerConfig: {
+    enabled: false,
+  },
+  proxyConfig: {
+    ajax: {
+      query: async (_, formValues = {}) => {
+        const params: any = {
+          timeType: formValues.timeType,
+          timeValue: formValues.timeValue,
+          deptIds: formValues.deptIds,
+          ledgerCodes: formValues.ledgerCodes,
+        };
+        if (formValues.timeType === 'custom' && Array.isArray(formValues.customRange)) {
+          const [start, end] = formValues.customRange;
+          params.startTime = start
+            ? dayjs(start).startOf('day').format('YYYY-MM-DD HH:mm:ss')
+            : undefined;
+          params.endTime = end
+            ? dayjs(end).endOf('day').format('YYYY-MM-DD HH:mm:ss')
+            : undefined;
+        }
+        const rows = await hospitalQcReportSummary(params);
+        const list: HospitalQcReportRowWithKey[] = (rows ?? []).map((row, index) => {
+          return {
+            ...row,
+            rowKey: `${row.periodLabel ?? ''}-${row.deptId ?? 'ALL'}-${row.ledgerCode ?? ''}-${index}`,
+          };
+        });
+        return { rows: list };
+      },
+    },
+  },
+  rowConfig: {
+    keyField: 'rowKey',
+  },
+  id: 'data-center-hospital-qc-report-index',
+};
+
+const [BasicTable, tableApi] = useVbenVxeGrid({
+  formOptions,
+  gridOptions,
+});
+
+async function setupOptions() {
+  const options = await hospitalQcDashboardOptions();
+  tableApi.formApi.updateSchema([
+    {
+      componentProps: {
+        options: (options.deptOptions ?? []).map((item) => ({
+          label: item.label,
+          value: Number(item.value),
+        })),
+      },
+      fieldName: 'deptIds',
+    },
+    {
+      componentProps: {
+        options: (options.ledgerOptions ?? []).map((item) => ({
+          label: item.label,
+          value: item.value,
+        })),
+      },
+      fieldName: 'ledgerCodes',
+    },
+  ]);
+}
+
+async function initFromRoute() {
+  const currentYear = new Date().getFullYear();
+  const rawTimeType = String(route.query.timeType ?? 'quarter');
+  const timeType =
+    rawTimeType === 'month' || rawTimeType === 'custom' || rawTimeType === 'quarter'
+      ? rawTimeType
+      : 'quarter';
+  const rawTimeValue = String(route.query.timeValue ?? '');
+  let timeValue = `${currentYear}-Q1`;
+  if (timeType === 'month') {
+    timeValue = MONTH_VALUE_PATTERN.test(rawTimeValue)
+      ? rawTimeValue
+      : dayjs().format('YYYY-MM');
+  } else if (timeType === 'quarter') {
+    timeValue = QUARTER_VALUE_PATTERN.test(rawTimeValue) ? rawTimeValue : `${currentYear}-Q1`;
+  }
+  const deptIds = String(route.query.deptIds ?? '')
+    .split(',')
+    .filter(Boolean)
+    .map((id) => Number(id));
+  const ledgerCodes = String(route.query.ledgerCodes ?? '')
+    .split(',')
+    .filter(Boolean);
+
+  await tableApi.formApi.setValues({
+    timeType,
+  });
+  await nextTick();
+
+  await tableApi.formApi.setValues({
+    timeValue,
+    deptIds,
+    ledgerCodes,
+  });
+  await nextTick();
+}
+
+onMounted(async () => {
+  await setupOptions();
+  await initFromRoute();
+  await tableApi.query();
+});
+</script>
+
+<template>
+  <Page :auto-content-height="true">
+    <BasicTable table-title="台账详细报表" />
+  </Page>
+</template>
+
+<style scoped lang="scss">
+:deep(.metric-highlight) {
+  font-weight: 600;
+  color: #0f766e;
+}
+</style>

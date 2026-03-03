@@ -2,15 +2,8 @@ import type { RouteRecordStringComponent } from '@vben/types';
 
 import { $t } from '@vben/locales';
 
-const {
-  version,
-  // vite inject-metadata 插件注入的全局变量
-} = __VBEN_ADMIN_METADATA__ || {};
+const { version } = __VBEN_ADMIN_METADATA__ || {};
 
-/**
- * 该文件放非后台返回的路由 比如个人中心 等需要跳转显示的页面
- * 也可以直接在菜单管理配置
- */
 const localRoutes: RouteRecordStringComponent[] = [
   {
     component: '/_core/profile/index',
@@ -31,23 +24,30 @@ const localRoutes: RouteRecordStringComponent[] = [
       keepAlive: true,
       activePath: '/data-center/nephrology/ledger',
     },
-    // Backend route name convention: Capitalize(path) + menuId
     // Menu seed: menu_id=2137, path='detail' -> 'Detail2137'
     name: 'Detail2137',
     path: '/data-center/nephrology/ledger/detail',
   },
+  {
+    component: '/data-center/hospital-qc/report/index',
+    meta: {
+      title: '医院质控报表',
+      hideInMenu: true,
+      keepAlive: true,
+      activePath: '/data-center/hospital-qc/dashboard',
+    },
+    // Menu seed: menu_id=2264, path='report' -> 'Report2264'
+    name: 'Report2264',
+    path: '/data-center/hospital-qc/report',
+  },
 ];
 
-/**
- * 这里放本地路由
- */
 export const localMenuList: RouteRecordStringComponent[] = [
   {
     component: 'BasicLayout',
     meta: {
       order: -1,
       title: 'page.dashboard.title',
-      // 不使用基础布局（仅在顶级生效）
       noBasicLayout: true,
     },
     name: 'Dashboard',

@@ -20,7 +20,7 @@ spring:
   cloud:
     # 网关配置
     gateway:
-      # 打印请求日志(自定�?
+      # 打印请求日志
       requestLog: true
       server:
         webflux:
