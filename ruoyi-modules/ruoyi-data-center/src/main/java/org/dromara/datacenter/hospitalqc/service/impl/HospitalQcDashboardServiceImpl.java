@@ -24,6 +24,7 @@ import org.dromara.datacenter.hospitalqc.mapper.HospitalQcDataSourceMapper;
 import org.dromara.datacenter.hospitalqc.mapper.HospitalQcLedgerItemMapper;
 import org.dromara.datacenter.hospitalqc.mapper.HospitalQcLedgerQueryMapper;
 import org.dromara.datacenter.hospitalqc.service.IHospitalQcDashboardService;
+import org.dromara.datacenter.hospitalqc.util.HospitalQcDeptPermissionUtils;
 import org.dromara.datacenter.hospitalqc.util.HospitalQcJdbcExecutor;
 import org.dromara.datacenter.hospitalqc.util.HospitalQcPasswordCrypto;
 import org.dromara.datacenter.hospitalqc.util.HospitalQcTimeRangeUtils;
@@ -68,6 +69,15 @@ public class HospitalQcDashboardServiceImpl implements IHospitalQcDashboardServi
 
     @Override
     public HospitalQcDashboardFilterVo selectFilterOptions() {
+        // Get department context
+        HospitalQcDeptPermissionUtils.DeptContextInfo deptContext = HospitalQcDeptPermissionUtils.getDeptContextInfo();
+        Set<Long> allowedDeptIds = new HashSet<>(deptContext.allowedDeptIds());
+        boolean isAdmin = deptContext.isAdmin();
+
+        // If admin and no dept filter, get all departments from ledger queries
+        // If normal user, only get allowed departments
+        Set<Long> visibleDeptIds = isAdmin ? null : allowedDeptIds;
+
         List<HospitalQcLedgerItem> ledgerItems = ledgerItemMapper.selectList(Wrappers.<HospitalQcLedgerItem>lambdaQuery()
             .select(HospitalQcLedgerItem::getLedgerCode, HospitalQcLedgerItem::getLedgerName)
             .eq(HospitalQcLedgerItem::getNodeType, HospitalQcConstants.NODE_TYPE_INDICATOR)
@@ -75,10 +85,19 @@ public class HospitalQcDashboardServiceImpl implements IHospitalQcDashboardServi
             .eq(HospitalQcLedgerItem::getIsDeleted, HospitalQcConstants.LOGIC_NOT_DELETED)
             .orderByAsc(HospitalQcLedgerItem::getSortOrder)
             .orderByAsc(HospitalQcLedgerItem::getId));
+
+        // Filter by visible departments for non-admin
+        if (visibleDeptIds != null) {
+            ledgerItems = ledgerItems.stream()
+                .filter(item -> item.getDeptId() == null || visibleDeptIds.contains(item.getDeptId()))
+                .toList();
+        }
+
         List<HospitalQcOptionVo> ledgerOptions = ledgerItems.stream()
             .map(it -> new HospitalQcOptionVo(it.getLedgerCode(), it.getLedgerName()))
             .toList();
 
+        // Get department options from ledger queries (filtered by visible departments)
         List<HospitalQcLedgerQuery> queryItems = ledgerQueryMapper.selectList(Wrappers.<HospitalQcLedgerQuery>lambdaQuery()
             .select(HospitalQcLedgerQuery::getDeptId, HospitalQcLedgerQuery::getDeptName)
             .eq(HospitalQcLedgerQuery::getStatus, HospitalQcConstants.STATUS_NORMAL)
@@ -89,7 +108,10 @@ public class HospitalQcDashboardServiceImpl implements IHospitalQcDashboardServi
         Map<Long, String> deptMap = new LinkedHashMap<>();
         for (HospitalQcLedgerQuery item : queryItems) {
             if (item.getDeptId() != null) {
-                deptMap.putIfAbsent(item.getDeptId(), item.getDeptName());
+                // Filter by visible departments for non-admin
+                if (visibleDeptIds == null || visibleDeptIds.contains(item.getDeptId())) {
+                    deptMap.putIfAbsent(item.getDeptId(), item.getDeptName());
+                }
             }
         }
         List<HospitalQcOptionVo> deptOptions = deptMap.entrySet().stream()
@@ -97,6 +119,10 @@ public class HospitalQcDashboardServiceImpl implements IHospitalQcDashboardServi
             .toList();
 
         HospitalQcDashboardFilterVo vo = new HospitalQcDashboardFilterVo();
+        vo.setIsAdmin(isAdmin);
+        vo.setCurrentDeptId(deptContext.currentDeptId());
+        vo.setCurrentDeptName(deptContext.currentDeptName());
+        vo.setAllowedDeptIds(deptContext.allowedDeptIds());
         vo.setDeptOptions(deptOptions);
         vo.setLedgerOptions(ledgerOptions);
         return vo;
@@ -104,11 +130,22 @@ public class HospitalQcDashboardServiceImpl implements IHospitalQcDashboardServi
 
     @Override
     public HospitalQcDashboardOverviewVo dashboardOverview(HospitalQcDashboardQueryBo bo) {
+        // Apply department permission filter
+        Set<Long> filteredDeptIds = HospitalQcDeptPermissionUtils.validateAndFilterDeptIds(bo.getDeptIds());
+        if (bo.getDeptIds() != null && !bo.getDeptIds().isEmpty()) {
+            // User provided deptIds, use filtered ones
+            bo.setDeptIds(new ArrayList<>(filteredDeptIds));
+        }
+        // If bo.getDeptIds() is empty, it means all departments for admin or default to allowed for normal user
+
+        // Use quarter window from request or config default
+        int quarterWindow = resolveQuarterWindow(bo.getQuarterWindow());
         int year = HospitalQcTimeRangeUtils.resolveYear(bo.getYear());
+
         List<HospitalQcLedgerItem> allItems = loadActiveLedgerItems();
         List<IndicatorMeta> indicators = buildIndicatorMetas(allItems, bo.getLedgerCodes());
         if (indicators.isEmpty()) {
-            return emptyDashboard(year);
+            return emptyDashboard(year, quarterWindow);
         }
 
         Set<String> queryCodes = indicators.stream()
@@ -116,16 +153,17 @@ public class HospitalQcDashboardServiceImpl implements IHospitalQcDashboardServi
             .collect(Collectors.toCollection(LinkedHashSet::new));
         List<HospitalQcLedgerQuery> queryConfigs = loadActiveQueryConfigs(queryCodes);
         if (queryConfigs.isEmpty()) {
-            return emptyDashboard(year);
+            return emptyDashboard(year, quarterWindow);
         }
 
         List<DeptContext> deptContexts = resolveDeptContexts(bo.getDeptIds(), queryConfigs);
         if (deptContexts.isEmpty()) {
-            return emptyDashboard(year);
+            return emptyDashboard(year, quarterWindow);
         }
 
         Map<DeptQueryKey, HospitalQcLedgerQuery> queryMap = buildDeptQueryMap(queryConfigs);
-        List<HospitalQcTimeRangeUtils.DateRange> quarterRanges = HospitalQcTimeRangeUtils.buildQuarterRanges(year);
+        // Use quarter window ranges instead of full year
+        List<HospitalQcTimeRangeUtils.DateRange> quarterRanges = HospitalQcTimeRangeUtils.buildQuarterWindow(quarterWindow);
         Map<String, Long> countMap = loadCountMap(deptContexts, queryCodes, quarterRanges, queryMap, true);
 
         List<HospitalQcTrendSeriesVo> trends = new ArrayList<>();
@@ -150,6 +188,12 @@ public class HospitalQcDashboardServiceImpl implements IHospitalQcDashboardServi
 
     @Override
     public List<HospitalQcReportRowVo> reportSummary(HospitalQcReportQueryBo bo) {
+        // Apply department permission filter
+        Set<Long> filteredDeptIds = HospitalQcDeptPermissionUtils.validateAndFilterDeptIds(bo.getDeptIds());
+        if (bo.getDeptIds() != null && !bo.getDeptIds().isEmpty()) {
+            bo.setDeptIds(new ArrayList<>(filteredDeptIds));
+        }
+
         HospitalQcTimeRangeUtils.DateRange currentRange = HospitalQcTimeRangeUtils.parseReportRange(
             StringUtils.defaultIfBlank(bo.getTimeType(), HospitalQcConstants.TIME_TYPE_QUARTER),
             bo.getTimeValue(),
@@ -292,15 +336,34 @@ public class HospitalQcDashboardServiceImpl implements IHospitalQcDashboardServi
             }
         }
 
+        // Apply department permission filter
+        Set<Long> allowedDeptIds = HospitalQcDeptPermissionUtils.getAllowedDeptIds();
+
         if (requestedDeptIds == null || requestedDeptIds.isEmpty()) {
-            return deptMap.entrySet().stream()
-                .map(entry -> new DeptContext(entry.getKey(), entry.getValue()))
-                .toList();
+            // No specific departments requested
+            if (allowedDeptIds.isEmpty()) {
+                // Admin: return all departments
+                return deptMap.entrySet().stream()
+                    .map(entry -> new DeptContext(entry.getKey(), entry.getValue()))
+                    .toList();
+            } else {
+                // Normal user: return only allowed departments
+                return allowedDeptIds.stream()
+                    .filter(deptMap::containsKey)
+                    .map(deptId -> new DeptContext(deptId, deptMap.get(deptId)))
+                    .toList();
+            }
         }
 
+        // Specific departments requested - filter by allowed
         List<DeptContext> depts = new ArrayList<>();
         for (Long deptId : requestedDeptIds) {
             if (deptId == null) {
+                continue;
+            }
+            // Check permission
+            if (!allowedDeptIds.isEmpty() && !allowedDeptIds.contains(deptId)) {
+                log.warn("User attempted to access unauthorized department: {}", deptId);
                 continue;
             }
             depts.add(new DeptContext(deptId, StringUtils.defaultIfBlank(deptMap.get(deptId), "科室" + deptId)));
@@ -636,10 +699,12 @@ public class HospitalQcDashboardServiceImpl implements IHospitalQcDashboardServi
         return "FLAT";
     }
 
-    private HospitalQcDashboardOverviewVo emptyDashboard(int year) {
+    private HospitalQcDashboardOverviewVo emptyDashboard(int year, int quarterWindow) {
         HospitalQcDashboardOverviewVo overview = new HospitalQcDashboardOverviewVo();
         overview.setYear(year);
-        overview.setQuarters(List.of(year + "-Q1", year + "-Q2", year + "-Q3", year + "-Q4"));
+        // Generate quarter labels based on window size
+        List<HospitalQcTimeRangeUtils.DateRange> ranges = HospitalQcTimeRangeUtils.buildQuarterWindow(quarterWindow);
+        overview.setQuarters(ranges.stream().map(HospitalQcTimeRangeUtils.DateRange::label).toList());
         overview.setTrends(List.of());
         overview.setRankings(List.of());
 
@@ -706,6 +771,14 @@ public class HospitalQcDashboardServiceImpl implements IHospitalQcDashboardServi
         return value * 1000L;
     }
 
+    private int resolveQuarterWindow(Integer requestedWindow) {
+        if (requestedWindow != null && requestedWindow >= 1 && requestedWindow <= 12) {
+            return requestedWindow;
+        }
+        Integer configWindow = properties.getDashboardQuarterWindow();
+        return configWindow == null || configWindow < 1 ? 4 : Math.min(configWindow, 12);
+    }
+
     private record IndicatorMeta(
         String ledgerCode,
         String ledgerName,
@@ -737,4 +810,3 @@ public class HospitalQcDashboardServiceImpl implements IHospitalQcDashboardServi
     private record CachedCount(Long countValue, Long expireAt) {
     }
 }
-

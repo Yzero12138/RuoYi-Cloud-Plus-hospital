@@ -40,6 +40,18 @@ const localRoutes: RouteRecordStringComponent[] = [
     name: 'Report2264',
     path: '/data-center/hospital-qc/report',
   },
+  {
+    component: '/data-center/hospital-qc/detail/index',
+    meta: {
+      title: '台账明细数据',
+      hideInMenu: true,
+      keepAlive: true,
+      activePath: '/data-center/hospital-qc/dashboard',
+    },
+    // Menu seed: menu_id=2264, path='detail' -> 'Detail2264'
+    name: 'Detail2264',
+    path: '/data-center/hospital-qc/detail',
+  },
 ];
 
 export const localMenuList: RouteRecordStringComponent[] = [

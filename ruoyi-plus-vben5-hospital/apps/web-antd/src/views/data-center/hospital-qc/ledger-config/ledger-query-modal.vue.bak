@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FieldMappingItem, HospitalQcSqlTestResult } from '#/api/data-center/hospital-qc/ledger-query/model';
+import type { HospitalQcSqlTestResult } from '#/api/data-center/hospital-qc/ledger-query/model';
 
 import { computed, ref } from 'vue';
 
@@ -20,41 +20,25 @@ import { defaultFormValueGetter, useBeforeCloseDiff } from '#/utils/popup';
 
 import { queryModalSchema } from './data';
 
-import { Input, message, Switch, Table, Tooltip } from 'ant-design-vue';
+import { message } from 'ant-design-vue';
 import dayjs from 'dayjs';
+
+// 字段映射项类型
+interface FieldMappingItem {
+  id: string;
+  alias: string;
+  label: string;
+  visible: boolean;
+  order: number;
+  width?: number;
+}
 
 const emit = defineEmits<{ reload: [] }>();
 
 const isUpdate = ref(false);
 const testResult = ref<HospitalQcSqlTestResult>();
 const fieldMappings = ref<FieldMappingItem[]>([]);
-
-const hasTestColumns = computed(() => (testResult.value?.columns?.length ?? 0) > 0);
-
-const fieldMappingColumns = [
-  { title: '原始字段名（SQL 列名）', dataIndex: 'field', width: '35%' },
-  { title: '展示名称', dataIndex: 'label', width: '35%' },
-  { title: '展示', dataIndex: 'visible', width: '15%', align: 'center' as const },
-  { title: '操作', dataIndex: 'action', width: '15%', align: 'center' as const },
-];
-
-function importFromTestResult() {
-  const cols = testResult.value?.columns ?? [];
-  if (cols.length === 0) return;
-  const existingFields = new Set(fieldMappings.value.map((m) => m.field));
-  const newMappings = cols
-    .filter((col) => !existingFields.has(col))
-    .map((col) => ({ field: col, label: col, visible: true }));
-  fieldMappings.value = [...fieldMappings.value, ...newMappings];
-}
-
-function addMappingRow() {
-  fieldMappings.value.push({ field: '', label: '', visible: true });
-}
-
-function removeMappingRow(index: number) {
-  fieldMappings.value.splice(index, 1);
-}
+const editingKey = ref<string>('');
 
 const title = computed(() => {
   return isUpdate.value ? $t('pages.common.edit') : $t('pages.common.add');
@@ -81,6 +65,15 @@ const sampleColumns = computed(() => {
   }));
 });
 
+// 字段映射表格列
+const mappingColumns = [
+  { title: 'SQL别名', dataIndex: 'alias', key: 'alias', width: 150 },
+  { title: '显示标签', dataIndex: 'label', key: 'label', width: 150 },
+  { title: '可见', dataIndex: 'visible', key: 'visible', width: 80 },
+  { title: '排序', dataIndex: 'order', key: 'order', width: 80 },
+  { title: '操作', dataIndex: 'action', key: 'action', width: 120 },
+];
+
 function toOptionalNumber(value: unknown) {
   if (value === null || value === undefined || value === '') {
     return undefined;
@@ -100,6 +93,113 @@ function formatSqlText(sql?: string) {
       return ['AND', 'OR'].includes(upper) ? `\n  ${upper}` : `\n${upper}`;
     })
     .trim();
+}
+
+// 从SQL测试列生成字段映射（只填入alias，label为空让用户填写）
+function generateFieldMappingsFromColumns(columns: string[]) {
+  const existingAliases = new Set(fieldMappings.value.map(m => m.alias));
+  const newMappings = columns
+    .filter(col => !existingAliases.has(col))
+    .map((col, index) => ({
+      id: `${Date.now()}_${index}`,
+      alias: col,
+      label: '', // 默认为空，让用户填写中文映射
+      visible: true,
+      order: fieldMappings.value.length + index + 1,
+    }));
+  fieldMappings.value = [...fieldMappings.value, ...newMappings];
+  // 自动进入编辑模式让用户填写label
+  if (newMappings.length > 0) {
+    editingKey.value = newMappings[0].id;
+  }
+}
+
+// 删除字段映射
+
+// 添加字段映射
+function addFieldMapping() {
+
+// 添加字段映射
+
+// 添加字段映射
+function generateFieldMappingsFromColumns(columns: string[]) {
+  const existingAliases = new Set(fieldMappings.value.map(m => m.alias));
+  const newMappings = columns
+    .filter(col => !existingAliases.has(col))
+    .map((col, index) => ({
+      id: `${Date.now()}_${index}`,
+      alias: col,
+      label: col,
+      visible: true,
+      order: fieldMappings.value.length + index + 1,
+    }));
+  fieldMappings.value = [...fieldMappings.value, ...newMappings];
+}
+
+// 添加字段映射
+function addFieldMapping() {
+  const newMapping: FieldMappingItem = {
+    id: `${Date.now()}`,
+    alias: '',
+    label: '',
+    visible: true,
+    order: fieldMappings.value.length + 1,
+  };
+  fieldMappings.value.push(newMapping);
+  editingKey.value = newMapping.id;
+}
+
+// 删除字段映射
+function removeFieldMapping(id: string) {
+  fieldMappings.value = fieldMappings.value.filter(m => m.id !== id);
+}
+
+// 编辑字段映射
+function editFieldMapping(record: FieldMappingItem) {
+  editingKey.value = record.id;
+}
+
+// 保存字段映射
+function saveFieldMapping(_record: FieldMappingItem) {
+  editingKey.value = '';
+  // 更新到表单
+  updateFieldMappingToForm();
+}
+
+// 取消编辑
+function cancelEdit() {
+  editingKey.value = '';
+}
+
+// 更新字段映射到表单
+function updateFieldMappingToForm() {
+  const sortedMappings = [...fieldMappings.value]
+    .filter(m => m.alias && m.label)
+    .sort((a, b) => a.order - b.order);
+  formApi.setFieldValue('detailFieldMapping', JSON.stringify(sortedMappings));
+}
+
+// 加载字段映射
+function loadFieldMappings(jsonStr?: string) {
+  if (!jsonStr) {
+    fieldMappings.value = [];
+    return;
+  }
+  try {
+    const parsed = JSON.parse(jsonStr);
+    if (Array.isArray(parsed)) {
+      fieldMappings.value = parsed.map((m, index) => ({
+        id: `${Date.now()}_${index}`,
+        alias: m.alias || '',
+        label: m.label || '',
+        visible: m.visible !== false,
+        order: m.order || index + 1,
+        width: m.width,
+      }));
+    }
+  } catch {
+    fieldMappings.value = [];
+  }
 }
 
 async function setupDeptSelect() {
@@ -185,6 +285,7 @@ const [BasicModal, modalApi] = useVbenModal({
     }
     modalApi.modalLoading(true);
     testResult.value = undefined;
+    fieldMappings.value = [];
 
     const { id } = modalApi.getData() as { id?: number };
     isUpdate.value = !!id;
@@ -200,20 +301,12 @@ const [BasicModal, modalApi] = useVbenModal({
         datasourceId: toOptionalNumber(record.datasourceId),
         status: toOptionalNumber(record.status) ?? 0,
       });
-      if (record.detailFieldMapping) {
-        try {
-          fieldMappings.value = JSON.parse(record.detailFieldMapping);
-        } catch {
-          fieldMappings.value = [];
-        }
-      } else {
-        fieldMappings.value = [];
-      }
+      // 加载字段映射
+      loadFieldMappings(record.detailFieldMapping);
     } else {
       await formApi.setValues({
         status: 0,
       });
-      fieldMappings.value = [];
     }
 
     await markInitialized();
@@ -224,15 +317,14 @@ const [BasicModal, modalApi] = useVbenModal({
 async function handleConfirm() {
   try {
     modalApi.lock(true);
-    // Serialize field mappings into hidden form field before validation
-    const mappingJson = fieldMappings.value.length > 0
-      ? JSON.stringify(fieldMappings.value)
-      : null;
-    await formApi.setFieldValue('detailFieldMapping', mappingJson);
     const { valid } = await formApi.validate();
     if (!valid) {
       return;
     }
+    
+    // 更新字段映射到表单
+    updateFieldMappingToForm();
+    
     const data = cloneDeep(await formApi.getValues());
     const payload = {
       ...data,
@@ -258,6 +350,7 @@ async function handleClosed() {
   await formApi.resetForm();
   testResult.value = undefined;
   fieldMappings.value = [];
+  editingKey.value = '';
   resetInitialized();
 }
 
@@ -282,6 +375,10 @@ async function handleTestSql() {
   testResult.value = result;
   if (result.success) {
     message.success(result.message ?? 'SQL 测试成功');
+    // 自动生成字段映射
+    if (result.columns?.length) {
+      generateFieldMappingsFromColumns(result.columns);
+    }
   } else {
     message.error(result.message ?? 'SQL 测试失败');
   }
@@ -289,7 +386,7 @@ async function handleTestSql() {
 </script>
 
 <template>
-  <BasicModal :title="title" class="w-[980px]">
+  <BasicModal :title="title" class="w-[1100px]">
     <div class="mb-3 flex gap-2">
       <a-button @click="handleFormatSql">格式化 SQL</a-button>
       <a-button
@@ -302,6 +399,83 @@ async function handleTestSql() {
     </div>
 
     <BasicForm />
+
+    <!-- 字段映射配置 -->
+    <div class="mt-4">
+      <div class="flex items-center justify-between mb-2">
+        <a-button type="dashed" size="small" @click="addFieldMapping">
+          + 添加字段
+        </a-button>
+        <a-button type="dashed" size="small" @click="addFieldMapping">
+          <template #icon><plus-outlined /></template>
+          添加字段
+        </a-button>
+      </div>
+      <a-table
+        :columns="mappingColumns"
+        :data-source="fieldMappings"
+        :pagination="false"
+        size="small"
+        bordered
+        row-key="id"
+        :scroll="{ y: 200 }"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'alias'">
+            <a-input
+              v-if="editingKey === record.id"
+              v-model:value="record.alias"
+              size="small"
+              placeholder="SQL别名"
+            />
+            <span v-else>{{ record.alias }}</span>
+          </template>
+          
+          <template v-else-if="column.dataIndex === 'label'">
+            <a-input
+              v-if="editingKey === record.id"
+              v-model:value="record.label"
+              size="small"
+              placeholder="显示标签"
+            />
+            <span v-else>{{ record.label }}</span>
+          </template>
+          
+          <template v-else-if="column.dataIndex === 'visible'">
+            <a-switch
+              v-model:checked="record.visible"
+              size="small"
+              :disabled="editingKey !== record.id"
+            />
+          </template>
+          
+          <template v-else-if="column.dataIndex === 'order'">
+            <a-input-number
+              v-if="editingKey === record.id"
+              v-model:value="record.order"
+              size="small"
+              :min="1"
+              style="width: 60px"
+            />
+            <span v-else>{{ record.order }}</span>
+          </template>
+          
+          <template v-else-if="column.dataIndex === 'action'">
+            <span v-if="editingKey === record.id">
+              <a-button type="link" size="small" @click="saveFieldMapping(record)">保存</a-button>
+              <a-button type="link" size="small" danger @click="cancelEdit">取消</a-button>
+            </span>
+            <span v-else>
+              <a-button type="link" size="small" @click="editFieldMapping(record)">编辑</a-button>
+              <a-button type="link" size="small" danger @click="removeFieldMapping(record.id)">删除</a-button>
+            </span>
+          </template>
+        </template>
+      </a-table>
+      <div class="text-xs text-gray-400 mt-1">
+        提示: SQL测试成功后会自动识别列名，可配置显示标签和可见性
+      </div>
+    </div>
 
     <div v-if="testResult" class="mt-3">
       <a-alert
@@ -319,50 +493,6 @@ async function handleTestSql() {
         bordered
         :scroll="{ x: 900, y: 240 }"
       />
-    </div>
-
-    <!-- 明细字段映射配置 -->
-    <div class="mt-4 rounded border border-gray-200 p-3">
-      <div class="mb-2 flex items-center justify-between">
-        <span class="text-sm font-medium">明细字段映射配置</span>
-        <div class="flex gap-2">
-          <Tooltip title="先执行「测试 SQL」，再点此按钮导入列名">
-            <a-button size="small" :disabled="!hasTestColumns" @click="importFromTestResult">
-              从测试结果导入字段
-            </a-button>
-          </Tooltip>
-          <a-button size="small" @click="addMappingRow">+ 添加字段</a-button>
-        </div>
-      </div>
-
-      <div v-if="fieldMappings.length === 0" class="py-3 text-center text-sm text-gray-400">
-        未配置字段映射，台账明细将使用 SQL 原始列名展示
-      </div>
-
-      <Table
-        v-else
-        :columns="fieldMappingColumns"
-        :data-source="fieldMappings"
-        :pagination="false"
-        size="small"
-        bordered
-        :row-key="(_r: any, idx: number) => idx"
-      >
-        <template #bodyCell="{ column, record, index }">
-          <template v-if="column.dataIndex === 'field'">
-            <Input v-model:value="record.field" size="small" placeholder="如 patient_id" />
-          </template>
-          <template v-else-if="column.dataIndex === 'label'">
-            <Input v-model:value="record.label" size="small" placeholder="如 患者ID" />
-          </template>
-          <template v-else-if="column.dataIndex === 'visible'">
-            <Switch v-model:checked="record.visible" size="small" />
-          </template>
-          <template v-else-if="column.dataIndex === 'action'">
-            <a-button type="link" danger size="small" @click="removeMappingRow(index)">删除</a-button>
-          </template>
-        </template>
-      </Table>
     </div>
   </BasicModal>
 </template>

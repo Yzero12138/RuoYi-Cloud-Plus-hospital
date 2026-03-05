@@ -26,6 +26,7 @@ public class HospitalQcLedgerQueryVo implements Serializable {
     private Long datasourceId;
     private String countSql;
     private String detailSql;
+    private String detailFieldMapping;
     private Integer status;
     private String remark;
 

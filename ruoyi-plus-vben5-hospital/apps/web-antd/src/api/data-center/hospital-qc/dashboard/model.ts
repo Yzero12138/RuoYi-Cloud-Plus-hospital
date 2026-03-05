@@ -1,9 +1,17 @@
-﻿export interface HospitalQcOptionItem {
+export interface HospitalQcOptionItem {
   value: string;
   label: string;
 }
 
 export interface HospitalQcDashboardFilterOptions {
+  /** 是否管理员 */
+  isAdmin?: boolean;
+  /** 当前科室ID */
+  currentDeptId?: number;
+  /** 当前科室名称 */
+  currentDeptName?: string;
+  /** 允许访问的科室ID列表（空表示全部） */
+  allowedDeptIds?: number[];
   deptOptions?: HospitalQcOptionItem[];
   ledgerOptions?: HospitalQcOptionItem[];
 }
@@ -64,6 +72,8 @@ export interface HospitalQcDashboardOverview {
 
 export interface HospitalQcDashboardQuery {
   year?: number;
+  /** 季度窗口大小（可选，默认使用配置值） */
+  quarterWindow?: number;
   deptIds?: number[];
   ledgerCodes?: string[];
 }

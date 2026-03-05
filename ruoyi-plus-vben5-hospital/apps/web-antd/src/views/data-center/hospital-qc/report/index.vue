@@ -1,11 +1,11 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import type { VbenFormProps } from '@vben/common-ui';
 
 import type { VxeGridProps } from '#/adapter/vxe-table';
 import type { HospitalQcReportRow } from '#/api/data-center/hospital-qc/report/model';
 
 import { nextTick, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { Page } from '@vben/common-ui';
 
@@ -18,9 +18,23 @@ import { hospitalQcReportSummary } from '#/api/data-center/hospital-qc/report';
 import { reportColumns, reportQuerySchema } from './data';
 
 const route = useRoute();
+const router = useRouter();
+
 type HospitalQcReportRowWithKey = HospitalQcReportRow & { rowKey: string };
 const QUARTER_VALUE_PATTERN = /^\d{4}-Q[1-4]$/;
 const MONTH_VALUE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+// 定义包含操作列的列配置
+const gridColumns: VxeGridProps['columns'] = [
+  ...(reportColumns || []),
+  {
+    title: '操作',
+    field: 'action',
+    width: 100,
+    fixed: 'right',
+    slots: { default: 'action' },
+  },
+];
 
 const formOptions: VbenFormProps = {
   commonConfig: {
@@ -34,7 +48,7 @@ const formOptions: VbenFormProps = {
 };
 
 const gridOptions: VxeGridProps = {
-  columns: reportColumns,
+  columns: gridColumns,
   height: 'auto',
   keepSource: true,
   pagerConfig: {
@@ -141,6 +155,18 @@ async function initFromRoute() {
   await nextTick();
 }
 
+// 跳转到明细页面
+function goDetail(row: HospitalQcReportRow) {
+  router.push({
+    path: '/data-center/hospital-qc/detail',
+    query: {
+      ledgerCode: row.ledgerCode,
+      deptId: row.deptId,
+      quarter: row.periodLabel,
+    },
+  });
+}
+
 onMounted(async () => {
   await setupOptions();
   await initFromRoute();
@@ -150,7 +176,13 @@ onMounted(async () => {
 
 <template>
   <Page :auto-content-height="true">
-    <BasicTable table-title="台账详细报表" />
+    <BasicTable table-title="台账详细报表">
+      <template #action="{ row }">
+        <a-button type="link" size="small" @click="goDetail(row)">
+          查看明细
+        </a-button>
+      </template>
+    </BasicTable>
   </Page>
 </template>
 

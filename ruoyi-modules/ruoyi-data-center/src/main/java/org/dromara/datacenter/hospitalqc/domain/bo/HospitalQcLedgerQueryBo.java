@@ -40,6 +40,8 @@ public class HospitalQcLedgerQueryBo extends BaseEntity {
     @NotBlank(message = "明细SQL不能为空", groups = {AddGroup.class, EditGroup.class})
     private String detailSql;
 
+    private String detailFieldMapping;
+
     private Integer status;
 
     private String remark;

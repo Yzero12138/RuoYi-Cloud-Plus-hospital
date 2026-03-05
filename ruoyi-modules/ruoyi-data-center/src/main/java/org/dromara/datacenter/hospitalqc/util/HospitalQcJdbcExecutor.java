@@ -96,6 +96,27 @@ public class HospitalQcJdbcExecutor {
         }
     }
 
+    /**
+     * Extract column labels from the SQL result metadata.
+     * Returns column names even when the result set has 0 rows.
+     */
+    public List<String> queryForColumnNames(JdbcSession session, String sql, Map<String, Object> params) {
+        String limitedSql = session.sourceType().applyLimitSql(sql, 0);
+        try {
+            List<String> result = session.template().query(limitedSql, params, rs -> {
+                java.sql.ResultSetMetaData meta = rs.getMetaData();
+                java.util.ArrayList<String> cols = new java.util.ArrayList<>();
+                for (int i = 1; i <= meta.getColumnCount(); i++) {
+                    cols.add(meta.getColumnLabel(i));
+                }
+                return cols;
+            });
+            return result == null ? List.of() : result;
+        } catch (DataAccessException ex) {
+            throw new ServiceException("SQL执行失败: " + rootMessage(ex));
+        }
+    }
+
     public List<Map<String, Object>> queryForPage(JdbcSession session,
                                                    String sql,
                                                    Map<String, Object> params,

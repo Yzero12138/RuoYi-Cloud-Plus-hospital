@@ -32,6 +32,8 @@ public class HospitalQcLedgerQuery extends BaseEntity {
 
     private String detailSql;
 
+    private String detailFieldMapping;
+
     private Integer status;
 
     private Integer isDeleted;

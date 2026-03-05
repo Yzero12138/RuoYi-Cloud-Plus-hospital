@@ -34,6 +34,10 @@ public class HospitalQcLedgerItemBo extends BaseEntity {
 
     private String queryCode;
 
+    private Long deptId;
+
+    private String deptName;
+
     private Integer sortOrder;
 
     private Integer status;

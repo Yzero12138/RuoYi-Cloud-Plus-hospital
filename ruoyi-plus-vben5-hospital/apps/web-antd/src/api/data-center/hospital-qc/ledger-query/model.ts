@@ -1,4 +1,4 @@
-﻿export interface HospitalQcLedgerQueryItem {
+export interface HospitalQcLedgerQueryItem {
   id?: number;
   deptId?: number;
   deptName?: string;
@@ -7,6 +7,7 @@
   datasourceId?: number;
   countSql?: string;
   detailSql?: string;
+  detailFieldMapping?: string;
   status?: number;
   remark?: string;
   createBy?: number;
@@ -24,6 +25,7 @@ export interface HospitalQcLedgerQueryForm {
   datasourceId?: number;
   countSql?: string;
   detailSql?: string;
+  detailFieldMapping?: string;
   status?: number;
   remark?: string;
 }
@@ -50,4 +52,10 @@ export interface HospitalQcSqlTestResult {
 export interface HospitalQcOptionItem {
   value: string;
   label: string;
+}
+
+export interface FieldMappingItem {
+  field: string;
+  label: string;
+  visible: boolean;
 }

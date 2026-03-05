@@ -40,5 +40,13 @@ public class HospitalQcProperties {
      * LEGACY_TLS10: try TLSv1.0 (requires JVM security policy compatibility)
      */
     private String sqlserverTlsMode = "TLS12";
+
+    /**
+     * Dashboard quarter window size (min 1, default 4).
+     * Represents how many recent quarters to display including current quarter.
+     * For example: 4 means current quarter + previous 3 quarters.
+     */
+    private Integer dashboardQuarterWindow = 4;
+
 }
 

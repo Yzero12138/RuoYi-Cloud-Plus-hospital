@@ -15,6 +15,7 @@ VALUES
 (2252, '台账配置', 2250, 2, 'ledger-config', 'data-center/hospital-qc/ledger-config/index', '', 1, 0, 'C', '0', '0', 'data-center:hospital-qc:ledger-maintain:list', 'tree-table', 103, 1, NOW(), NULL, NULL, ''),
 (2253, '台账数据大屏', 2250, 3, 'dashboard', 'data-center/hospital-qc/dashboard/index', '', 1, 0, 'C', '0', '0', 'data-center:hospital-qc:dashboard:list', 'area-chart', 103, 1, NOW(), NULL, NULL, ''),
 (2264, '台账详细报表', 2253, 1, 'report', 'data-center/hospital-qc/report/index', '', 1, 1, 'C', '1', '0', 'data-center:hospital-qc:report:list', '#', 103, 1, NOW(), NULL, NULL, '/data-center/hospital-qc/dashboard'),
+(2273, '台账明细数据', 2253, 2, 'detail', 'data-center/hospital-qc/detail/index', '', 1, 1, 'C', '1', '0', 'data-center:hospital-qc:report:detail', '#', 103, 1, NOW(), NULL, NULL, '/data-center/hospital-qc/dashboard'),
 
 (2255, '数据源查询', 2251, 1, '#', '', '', 1, 0, 'F', '0', '0', 'data-center:hospital-qc:datasource:query', '#', 103, 1, NOW(), NULL, NULL, ''),
 (2256, '数据源新增', 2251, 2, '#', '', '', 1, 0, 'F', '0', '0', 'data-center:hospital-qc:datasource:add', '#', 103, 1, NOW(), NULL, NULL, ''),
@@ -35,7 +36,8 @@ VALUES
 (2269, '查询配置测试', 2252, 10, '#', '', '', 1, 0, 'F', '0', '0', 'data-center:hospital-qc:ledger-query:test', '#', 103, 1, NOW(), NULL, NULL, ''),
 
 (2270, '大屏查询', 2253, 1, '#', '', '', 1, 0, 'F', '0', '0', 'data-center:hospital-qc:dashboard:list', '#', 103, 1, NOW(), NULL, NULL, ''),
-(2271, '报表查询', 2264, 1, '#', '', '', 1, 0, 'F', '0', '0', 'data-center:hospital-qc:report:list', '#', 103, 1, NOW(), NULL, NULL, '')
+(2271, '报表查询', 2264, 1, '#', '', '', 1, 0, 'F', '0', '0', 'data-center:hospital-qc:report:list', '#', 103, 1, NOW(), NULL, NULL, ''),
+(2274, '明细查询', 2273, 1, '#', '', '', 1, 0, 'F', '0', '0', 'data-center:hospital-qc:report:detail', '#', 103, 1, NOW(), NULL, NULL, '')
 ON DUPLICATE KEY UPDATE
   menu_name = VALUES(menu_name),
   parent_id = VALUES(parent_id),
@@ -76,4 +78,6 @@ INSERT IGNORE INTO sys_role_menu(role_id, menu_id) VALUES
 (3, 2268),
 (3, 2269),
 (3, 2270),
-(3, 2271);
+(3, 2271),
+(3, 2273),
+(3, 2274);

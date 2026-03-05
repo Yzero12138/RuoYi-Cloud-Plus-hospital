@@ -35,7 +35,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -112,6 +112,7 @@ public class HospitalQcLedgerQueryServiceImpl implements IHospitalQcLedgerQueryS
         update.setDatasourceId(bo.getDatasourceId());
         update.setCountSql(bo.getCountSql());
         update.setDetailSql(bo.getDetailSql());
+        update.setDetailFieldMapping(bo.getDetailFieldMapping());
         update.setRemark(bo.getRemark());
         update.setStatus(bo.getStatus() == null ? old.getStatus() : bo.getStatus());
         return baseMapper.updateById(update) > 0;
@@ -163,11 +164,9 @@ public class HospitalQcLedgerQueryServiceImpl implements IHospitalQcLedgerQueryS
                 vo.setCountValue(jdbcExecutor.queryForCount(session, bo.getCountSql(), params));
                 List<Map<String, Object>> rows = jdbcExecutor.queryForRows(session, bo.getDetailSql(), params, rowLimit);
                 vo.setSampleRows(rows);
-                Set<String> columns = new LinkedHashSet<>();
-                for (Map<String, Object> row : rows) {
-                    columns.addAll(row.keySet());
-                }
-                vo.setColumns(new ArrayList<>(columns));
+                // Always derive columns from metadata so they're populated even when 0 rows are returned
+                List<String> columns = jdbcExecutor.queryForColumnNames(session, bo.getDetailSql(), params);
+                vo.setColumns(columns);
                 return vo;
             });
             result.setSuccess(true);

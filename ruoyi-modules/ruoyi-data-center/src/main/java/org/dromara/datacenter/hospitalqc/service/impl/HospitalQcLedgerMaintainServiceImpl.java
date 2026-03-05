@@ -17,6 +17,7 @@ import org.dromara.datacenter.hospitalqc.domain.vo.HospitalQcLedgerItemVo;
 import org.dromara.datacenter.hospitalqc.mapper.HospitalQcLedgerItemMapper;
 import org.dromara.datacenter.hospitalqc.mapper.HospitalQcLedgerQueryMapper;
 import org.dromara.datacenter.hospitalqc.service.IHospitalQcLedgerMaintainService;
+import org.dromara.datacenter.hospitalqc.util.HospitalQcDeptPermissionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,24 +45,54 @@ public class HospitalQcLedgerMaintainServiceImpl implements IHospitalQcLedgerMai
 
     @Override
     public List<HospitalQcLedgerItemVo> selectTreeList(HospitalQcLedgerItemBo bo) {
+        // Apply department permission filter
+        Set<Long> allowedDeptIds = HospitalQcDeptPermissionUtils.getAllowedDeptIds();
+        if (!allowedDeptIds.isEmpty()) {
+            // Non-admin user: filter by allowed departments
+            if (bo.getDeptId() != null) {
+                // Validate requested department
+                if (!allowedDeptIds.contains(bo.getDeptId())) {
+                    throw new ServiceException("没有权限访问该科室的台账数据");
+                }
+            } else {
+                // Use first allowed department as default for non-admin
+                bo.setDeptId(allowedDeptIds.iterator().next());
+            }
+        }
+        // Admin with empty allowedDeptIds can access all, no filter needed
+
         List<HospitalQcLedgerItemVo> list = baseMapper.selectVoList(buildQueryWrapper(bo));
         if (list == null || list.isEmpty()) {
-            log.warn("Hospital QC ledger tree is empty. Please check table hospital_qc_ledger_item data.");
+            log.warn("Hospital QC ledger tree is empty for deptId={}. Please check table hospital_qc_ledger_item data.", bo.getDeptId());
         }
         return buildTree(list);
     }
 
     @Override
     public HospitalQcLedgerItemVo selectById(Long id) {
-        return baseMapper.selectVoOne(Wrappers.<HospitalQcLedgerItem>lambdaQuery()
+        HospitalQcLedgerItemVo vo = baseMapper.selectVoOne(Wrappers.<HospitalQcLedgerItem>lambdaQuery()
             .eq(HospitalQcLedgerItem::getId, id)
             .eq(HospitalQcLedgerItem::getIsDeleted, HospitalQcConstants.LOGIC_NOT_DELETED));
+        if (vo != null) {
+            HospitalQcDeptPermissionUtils.assertDeptPermission(vo.getDeptId());
+        }
+        return vo;
     }
 
     @Override
     public Boolean insertByBo(HospitalQcLedgerItemBo bo) {
         normalizeAndValidate(bo, true);
         checkCodeUnique(bo.getLedgerCode(), null);
+
+        // Apply department permission for non-admin
+        Set<Long> allowedDeptIds = HospitalQcDeptPermissionUtils.getAllowedDeptIds();
+        if (!allowedDeptIds.isEmpty()) {
+            if (bo.getDeptId() == null) {
+                bo.setDeptId(allowedDeptIds.iterator().next());
+            } else if (!allowedDeptIds.contains(bo.getDeptId())) {
+                throw new ServiceException("没有权限在该科室下创建台账");
+            }
+        }
 
         HospitalQcLedgerItem add = MapstructUtils.convert(bo, HospitalQcLedgerItem.class);
         add.setParentId(bo.getParentId() == null ? 0L : bo.getParentId());
@@ -77,9 +108,22 @@ public class HospitalQcLedgerMaintainServiceImpl implements IHospitalQcLedgerMai
 
     @Override
     public Boolean updateByBo(HospitalQcLedgerItemBo bo) {
-        getEntity(bo.getId());
+        HospitalQcLedgerItem existing = getEntity(bo.getId());
+        // Check permission on existing record
+        HospitalQcDeptPermissionUtils.assertDeptPermission(existing.getDeptId());
+
         normalizeAndValidate(bo, false);
         checkCodeUnique(bo.getLedgerCode(), bo.getId());
+
+        // Apply department permission for non-admin
+        Set<Long> allowedDeptIds = HospitalQcDeptPermissionUtils.getAllowedDeptIds();
+        if (!allowedDeptIds.isEmpty()) {
+            if (bo.getDeptId() == null) {
+                bo.setDeptId(allowedDeptIds.iterator().next());
+            } else if (!allowedDeptIds.contains(bo.getDeptId())) {
+                throw new ServiceException("没有权限修改到该科室");
+            }
+        }
 
         HospitalQcLedgerItem update = MapstructUtils.convert(bo, HospitalQcLedgerItem.class);
         if (update.getParentId() == null) {
@@ -94,6 +138,13 @@ public class HospitalQcLedgerMaintainServiceImpl implements IHospitalQcLedgerMai
         if (ids == null || ids.isEmpty()) {
             return true;
         }
+
+        // Check permission on all items to be deleted
+        for (Long id : ids) {
+            HospitalQcLedgerItem item = getEntity(id);
+            HospitalQcDeptPermissionUtils.assertDeptPermission(item.getDeptId());
+        }
+
         List<HospitalQcLedgerItem> allList = baseMapper.selectList(Wrappers.<HospitalQcLedgerItem>lambdaQuery()
             .select(HospitalQcLedgerItem::getId, HospitalQcLedgerItem::getParentId)
             .eq(HospitalQcLedgerItem::getIsDeleted, HospitalQcConstants.LOGIC_NOT_DELETED));
@@ -199,6 +250,7 @@ public class HospitalQcLedgerMaintainServiceImpl implements IHospitalQcLedgerMai
     private LambdaQueryWrapper<HospitalQcLedgerItem> buildQueryWrapper(HospitalQcLedgerItemBo bo) {
         LambdaQueryWrapper<HospitalQcLedgerItem> lqw = Wrappers.lambdaQuery();
         lqw.eq(bo.getId() != null, HospitalQcLedgerItem::getId, bo.getId());
+        lqw.eq(bo.getDeptId() != null, HospitalQcLedgerItem::getDeptId, bo.getDeptId());
         lqw.eq(StringUtils.isNotBlank(bo.getLedgerCode()), HospitalQcLedgerItem::getLedgerCode, bo.getLedgerCode());
         lqw.like(StringUtils.isNotBlank(bo.getLedgerName()), HospitalQcLedgerItem::getLedgerName, bo.getLedgerName());
         lqw.eq(StringUtils.isNotBlank(bo.getNodeType()), HospitalQcLedgerItem::getNodeType, bo.getNodeType());
@@ -246,4 +298,3 @@ public class HospitalQcLedgerMaintainServiceImpl implements IHospitalQcLedgerMai
         }
     }
 }
-

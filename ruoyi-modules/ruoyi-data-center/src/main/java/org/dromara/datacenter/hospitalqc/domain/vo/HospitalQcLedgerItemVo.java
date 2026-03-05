@@ -25,6 +25,8 @@ public class HospitalQcLedgerItemVo implements Serializable {
     private String ledgerName;
     private String nodeType;
     private String queryCode;
+    private Long deptId;
+    private String deptName;
     private Integer sortOrder;
     private Integer status;
     private String remark;

@@ -239,4 +239,12 @@ export const queryModalSchema: FormSchemaGetter = () => [
       autoSize: { minRows: 2, maxRows: 4 },
     },
   },
+  {
+    component: 'Input',
+    dependencies: {
+      show: () => false,
+      triggerFields: [''],
+    },
+    fieldName: 'detailFieldMapping',
+  },
 ];

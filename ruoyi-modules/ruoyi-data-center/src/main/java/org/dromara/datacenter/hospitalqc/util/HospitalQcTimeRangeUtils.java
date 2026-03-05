@@ -54,6 +54,57 @@ public final class HospitalQcTimeRangeUtils {
         return ranges;
     }
 
+    /**
+     * Build quarter ranges for dashboard trend chart.
+     * Returns a sliding window of recent quarters ending at the current quarter.
+     *
+     * @param windowSize number of quarters to include (min 1)
+     * @return list of DateRange for each quarter in the window
+     */
+    public static List<DateRange> buildQuarterWindow(int windowSize) {
+        if (windowSize < 1) {
+            windowSize = 1;
+        }
+        if (windowSize > 12) {
+            windowSize = 12; // Max 12 quarters (3 years)
+        }
+
+        LocalDate now = LocalDate.now();
+        int currentYear = now.getYear();
+        int currentMonth = now.getMonthValue();
+        int currentQuarter = (currentMonth - 1) / 3 + 1;
+
+        List<DateRange> ranges = new ArrayList<>();
+
+        // Calculate starting point
+        int totalQuartersBack = windowSize - 1;
+        int startYear = currentYear;
+        int startQuarter = currentQuarter;
+
+        // Move backwards to find start quarter
+        for (int i = 0; i < totalQuartersBack; i++) {
+            startQuarter--;
+            if (startQuarter < 1) {
+                startQuarter = 4;
+                startYear--;
+            }
+        }
+
+        // Build ranges from start to current
+        int year = startYear;
+        int quarter = startQuarter;
+        for (int i = 0; i < windowSize; i++) {
+            ranges.add(parseQuarterRange(year + "-Q" + quarter));
+            quarter++;
+            if (quarter > 4) {
+                quarter = 1;
+                year++;
+            }
+        }
+
+        return ranges;
+    }
+
     public static DateRange parseQuarterRange(String value) {
         if (StringUtils.isBlank(value) || !value.matches("^\\d{4}-Q[1-4]$")) {
             throw new ServiceException("季度格式错误，示例：2026-Q1");
@@ -96,4 +147,3 @@ public final class HospitalQcTimeRangeUtils {
     public record DateRange(Date startTime, Date endTime, String label) {
     }
 }
-
