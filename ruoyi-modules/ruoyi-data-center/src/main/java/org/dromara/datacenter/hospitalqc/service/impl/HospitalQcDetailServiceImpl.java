@@ -81,7 +81,7 @@ public class HospitalQcDetailServiceImpl implements IHospitalQcDetailService {
         HospitalQcDeptPermissionUtils.assertDeptPermission(ledgerItem.getDeptId());
 
         // Find detail query config
-        HospitalQcLedgerQuery queryConfig = findDetailQueryConfig(ledgerItem.getId(), deptId);
+        HospitalQcLedgerQuery queryConfig = findDetailQueryConfig(ledgerItem.getId(), deptId, bo.getNodeType());
         if (queryConfig == null || StringUtils.isBlank(queryConfig.getDetailSql())) {
             throw new ServiceException("该台账未配置明细查询");
         }
@@ -153,7 +153,7 @@ public class HospitalQcDetailServiceImpl implements IHospitalQcDetailService {
     }
 
     @Override
-    public List<String> queryDetailColumns(String ledgerCode) {
+    public List<String> queryDetailColumns(String ledgerCode, String nodeType, Long deptId) {
         if (StringUtils.isBlank(ledgerCode)) {
             return List.of();
         }
@@ -169,7 +169,7 @@ public class HospitalQcDetailServiceImpl implements IHospitalQcDetailService {
             return List.of();
         }
 
-        HospitalQcLedgerQuery queryConfig = findDetailQueryConfig(ledgerItem.getId(), null);
+        HospitalQcLedgerQuery queryConfig = findDetailQueryConfig(ledgerItem.getId(), deptId, nodeType);
         if (queryConfig == null || StringUtils.isBlank(queryConfig.getDetailSql())) {
             return List.of();
         }
@@ -191,12 +191,20 @@ public class HospitalQcDetailServiceImpl implements IHospitalQcDetailService {
     /**
      * Find detail query config for a ledger item.
      * First try to find by deptId, then fallback to global config (deptId is null).
+     *
+     * @param ledgerItemId ledger item ID
+     * @param deptId       department ID (optional)
+     * @param nodeType     node type filter: N=numerator, D=denominator, null=any
      */
-    private HospitalQcLedgerQuery findDetailQueryConfig(Long ledgerItemId, Long deptId) {
-        // Get all child nodes (numerator and denominator)
-        List<HospitalQcLedgerItem> children = ledgerItemMapper.selectList(Wrappers.<HospitalQcLedgerItem>lambdaQuery()
+    private HospitalQcLedgerQuery findDetailQueryConfig(Long ledgerItemId, Long deptId, String nodeType) {
+        // Get child nodes, optionally filtered by nodeType
+        var queryWrapper = Wrappers.<HospitalQcLedgerItem>lambdaQuery()
             .eq(HospitalQcLedgerItem::getParentId, ledgerItemId)
-            .eq(HospitalQcLedgerItem::getIsDeleted, HospitalQcConstants.LOGIC_NOT_DELETED));
+            .eq(HospitalQcLedgerItem::getIsDeleted, HospitalQcConstants.LOGIC_NOT_DELETED);
+        if (StringUtils.isNotBlank(nodeType)) {
+            queryWrapper.eq(HospitalQcLedgerItem::getNodeType, nodeType);
+        }
+        List<HospitalQcLedgerItem> children = ledgerItemMapper.selectList(queryWrapper);
 
         // Collect all query codes from children
         List<String> queryCodes = new ArrayList<>();

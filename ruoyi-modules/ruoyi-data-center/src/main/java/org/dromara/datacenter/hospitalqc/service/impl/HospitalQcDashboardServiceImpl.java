@@ -449,7 +449,7 @@ public class HospitalQcDashboardServiceImpl implements IHospitalQcDashboardServi
                         }
                         long count = 0L;
                         try {
-                            count = jdbcExecutor.queryForCount(session, task.countSql(), task.params());
+                            count = jdbcExecutor.queryForScalar(session, task.countSql(), task.params());
                         } catch (Exception ex) {
                             log.warn("Execute dashboard count sql failed. key={}", task.countKey(), ex);
                         }

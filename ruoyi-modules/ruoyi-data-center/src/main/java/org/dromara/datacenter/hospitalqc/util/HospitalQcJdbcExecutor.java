@@ -74,9 +74,26 @@ public class HospitalQcJdbcExecutor {
     }
 
     public long queryForCount(JdbcSession session, String sql, Map<String, Object> params) {
+        String countSql = "SELECT COUNT(*) FROM (" + sql + ") _cnt";
         try {
-            Long count = session.template().queryForObject(sql, params, Long.class);
+            Long count = session.template().queryForObject(countSql, params, Long.class);
             return count == null ? 0L : count;
+        } catch (EmptyResultDataAccessException ex) {
+            return 0L;
+        } catch (DataAccessException ex) {
+            throw new ServiceException("SQL执行失败: " + rootMessage(ex));
+        }
+    }
+
+    /**
+     * Execute a SQL that returns a single numeric value (scalar).
+     * Unlike {@link #queryForCount} which wraps the SQL in COUNT(*),
+     * this method returns the actual value from the first column of the first row.
+     */
+    public long queryForScalar(JdbcSession session, String sql, Map<String, Object> params) {
+        try {
+            Long value = session.template().queryForObject(sql, params, Long.class);
+            return value == null ? 0L : value;
         } catch (EmptyResultDataAccessException ex) {
             return 0L;
         } catch (DataAccessException ex) {

@@ -126,13 +126,14 @@ async function initFromRoute() {
       ? rawTimeType
       : 'quarter';
   const rawTimeValue = String(route.query.timeValue ?? '');
-  let timeValue = `${currentYear}-Q1`;
+  const currentQuarter = Math.ceil((dayjs().month() + 1) / 3);
+  let timeValue = `${currentYear}-Q${currentQuarter}`;
   if (timeType === 'month') {
     timeValue = MONTH_VALUE_PATTERN.test(rawTimeValue)
       ? rawTimeValue
       : dayjs().format('YYYY-MM');
   } else if (timeType === 'quarter') {
-    timeValue = QUARTER_VALUE_PATTERN.test(rawTimeValue) ? rawTimeValue : `${currentYear}-Q1`;
+    timeValue = QUARTER_VALUE_PATTERN.test(rawTimeValue) ? rawTimeValue : `${currentYear}-Q${currentQuarter}`;
   }
   const deptIds = String(route.query.deptIds ?? '')
     .split(',')
@@ -156,13 +157,14 @@ async function initFromRoute() {
 }
 
 // 跳转到明细页面
-function goDetail(row: HospitalQcReportRow) {
+function goDetail(row: HospitalQcReportRow, nodeType?: string) {
   router.push({
     path: '/data-center/hospital-qc/detail',
     query: {
       ledgerCode: row.ledgerCode,
       deptId: row.deptId,
       quarter: row.periodLabel,
+      ...(nodeType ? { nodeType } : {}),
     },
   });
 }
@@ -177,6 +179,22 @@ onMounted(async () => {
 <template>
   <Page :auto-content-height="true">
     <BasicTable table-title="台账详细报表">
+      <template #numerator="{ row }">
+        <a-button type="link" size="small" @click="goDetail(row, 'N')">
+          {{ row.numerator ?? 0 }}
+        </a-button>
+      </template>
+      <template #denominator="{ row }">
+        <a-button
+          v-if="!row.noDenominator"
+          type="link"
+          size="small"
+          @click="goDetail(row, 'D')"
+        >
+          {{ row.denominator ?? 0 }}
+        </a-button>
+        <span v-else>--</span>
+      </template>
       <template #action="{ row }">
         <a-button type="link" size="small" @click="goDetail(row)">
           查看明细

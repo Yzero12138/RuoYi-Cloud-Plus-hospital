@@ -46,7 +46,9 @@ public class HospitalQcReportController {
 
     @SaCheckPermission("data-center:hospital-qc:report:detail")
     @GetMapping("/detail/columns")
-    public R<List<String>> detailColumns(@RequestParam String ledgerCode) {
-        return R.ok(detailService.queryDetailColumns(ledgerCode));
+    public R<List<String>> detailColumns(@RequestParam String ledgerCode,
+                                         @RequestParam(required = false) String nodeType,
+                                         @RequestParam(required = false) Long deptId) {
+        return R.ok(detailService.queryDetailColumns(ledgerCode, nodeType, deptId));
     }
 }

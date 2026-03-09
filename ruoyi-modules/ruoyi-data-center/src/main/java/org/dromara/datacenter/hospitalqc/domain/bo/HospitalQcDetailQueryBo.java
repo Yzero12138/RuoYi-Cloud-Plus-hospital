@@ -32,6 +32,12 @@ public class HospitalQcDetailQueryBo {
     private Date endTime;
 
     /**
+     * Node type filter: N=numerator, D=denominator.
+     * If null, returns the first available detail query.
+     */
+    private String nodeType;
+
+    /**
      * Page number (1-based).
      */
     private Integer pageNum = 1;

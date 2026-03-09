@@ -23,9 +23,19 @@ const latestMetric = computed(() => {
   return metrics.length > 0 ? metrics[metrics.length - 1] : null;
 });
 
-// 计算标题显示文本（包含最新百分比）
+// 是否无分母台账
+const isNoDenominator = computed(() => {
+  const metrics = props.trend.quarterMetrics ?? [];
+  return metrics.length > 0 && metrics[0]?.noDenominator === true;
+});
+
+// 计算标题显示文本（包含最新百分比或数值）
 const cardTitle = computed(() => {
   const name = props.trend.ledgerName ?? '';
+  if (isNoDenominator.value) {
+    const num = latestMetric.value?.numerator;
+    return num !== undefined && num !== null ? `${name} (${num})` : name;
+  }
   const percent = latestMetric.value?.percentDisplay;
   return percent && percent !== '--' ? `${name} (${percent})` : name;
 });
@@ -57,10 +67,10 @@ function renderChart() {
       formatter: (params: any) => {
         const data = params[0];
         const metric = metrics[data.dataIndex];
-        return `${data.name}<br/>
-                百分比: ${metric?.percentDisplay ?? '--'}<br/>
-                分子: ${metric?.numerator ?? 0}<br/>
-                分母: ${metric?.denominator ?? 0}`;
+        if (isNoDenominator.value) {
+          return `${data.name}<br/>数值: ${metric?.numerator ?? 0}`;
+        }
+        return `${data.name}<br/>百分比: ${metric?.percentDisplay ?? '--'}<br/>分子: ${metric?.numerator ?? 0}<br/>分母: ${metric?.denominator ?? 0}`;
       },
     },
     xAxis: {
@@ -70,14 +80,19 @@ function renderChart() {
     },
     yAxis: {
       type: 'value',
-      name: '%',
+      name: isNoDenominator.value ? '' : '%',
       nameTextStyle: { fontSize: 10 },
-      axisLabel: { fontSize: 10, formatter: '{value}%' },
+      axisLabel: {
+        fontSize: 10,
+        formatter: isNoDenominator.value ? '{value}' : '{value}%',
+      },
     },
     series: [
       {
-        name: '百分比',
-        data: metrics.map((item) => item.indicatorPercent ?? null),
+        name: isNoDenominator.value ? '数值' : '百分比',
+        data: isNoDenominator.value
+          ? metrics.map((item) => item.numerator ?? null)
+          : metrics.map((item) => item.indicatorPercent ?? null),
         type: 'line',
         smooth: true,
         symbol: 'circle',
@@ -127,6 +142,7 @@ onMounted(() => {
       </a-button>
     </template>
     <EchartsUI ref="chartRef" style="height: 150px" />
+    <div class="ledger-subtitle">{{ props.trend.ledgerName ?? '' }}</div>
   </a-card>
 </template>
 
@@ -156,5 +172,16 @@ onMounted(() => {
   :deep(.ant-card-body) {
     padding: 8px;
   }
+}
+
+.ledger-subtitle {
+  text-align: center;
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+  padding-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

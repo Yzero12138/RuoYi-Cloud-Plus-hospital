@@ -7,6 +7,8 @@ export interface HospitalQcDetailQuery {
   startTime: string;
   /** 结束时间 */
   endTime: string;
+  /** 节点类型: N=分子, D=分母 */
+  nodeType?: string;
   /** 页码 */
   pageNum?: number;
   /** 每页条数 */

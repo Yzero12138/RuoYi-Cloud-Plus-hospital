@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { hospitalQcDashboardOptions } from '#/api/data-center/hospital-qc/dashboard';
 import { hospitalQcDetailColumns, hospitalQcDetailPage } from '#/api/data-center/hospital-qc/detail';
+import { quarterOptions } from '../report/data';
 
 const route = useRoute();
 const router = useRouter();
@@ -30,12 +31,12 @@ const queryForm = ref({
   ledgerCode: '',
   deptId: undefined as number | undefined,
   quarter: '',
+  nodeType: '' as string,
 });
 
-// 解析季度为时间范围（只显示日期，不显示时分秒）
-const timeRange = computed(() => {
-  const quarter = queryForm.value.quarter;
-  if (!quarter || !quarter.match(/^\d{4}-Q[1-4]$/)) {
+// 解析季度为时间范围
+function quarterToTimeRange(quarter: string) {
+  if (!quarter || !/^\d{4}-Q[1-4]$/.test(quarter)) {
     const now = dayjs();
     return {
       startTime: now.startOf('quarter').format('YYYY-MM-DD'),
@@ -50,6 +51,15 @@ const timeRange = computed(() => {
     startTime: start.format('YYYY-MM-DD'),
     endTime: end.format('YYYY-MM-DD'),
   };
+}
+
+const timeRange = computed(() => quarterToTimeRange(queryForm.value.quarter));
+
+const detailTitle = computed(() => {
+  const nt = queryForm.value.nodeType;
+  if (nt === 'N') return '台账明细数据（分子）';
+  if (nt === 'D') return '台账明细数据（分母）';
+  return '台账明细数据';
 });
 
 const formOptions: VbenFormProps = {
@@ -83,6 +93,27 @@ const formOptions: VbenFormProps = {
       },
     },
     {
+      component: 'Select',
+      fieldName: 'quarter',
+      label: '季度',
+      componentProps: {
+        options: quarterOptions(),
+        placeholder: '请选择季度',
+        allowClear: true,
+        style: { width: '160px' },
+        onChange: async (value: string) => {
+          if (value && /^\d{4}-Q[1-4]$/.test(value)) {
+            queryForm.value.quarter = value;
+            const range = quarterToTimeRange(value);
+            await tableApi.formApi.setValues({
+              startTime: range.startTime,
+              endTime: range.endTime,
+            });
+          }
+        },
+      },
+    },
+    {
       component: 'DatePicker',
       fieldName: 'startTime',
       label: '开始日期',
@@ -103,7 +134,7 @@ const formOptions: VbenFormProps = {
       rules: 'required',
     },
   ],
-  wrapperClass: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
+  wrapperClass: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-5',
 };
 
 const gridOptions: VxeGridProps = {
@@ -123,17 +154,32 @@ const gridOptions: VxeGridProps = {
         }
         loading.value = true;
         try {
+          const startTime = formValues.startTime
+            ? dayjs(formValues.startTime).startOf('day').format('YYYY-MM-DD HH:mm:ss')
+            : undefined;
+          const endTime = formValues.endTime
+            ? dayjs(formValues.endTime).endOf('day').format('YYYY-MM-DD HH:mm:ss')
+            : undefined;
           const res = await hospitalQcDetailPage({
             ledgerCode: formValues.ledgerCode,
             deptIds: formValues.deptId ? [formValues.deptId] : undefined,
-            startTime: formValues.startTime,
-            endTime: formValues.endTime,
+            startTime: startTime!,
+            endTime: endTime!,
+            nodeType: queryForm.value.nodeType || undefined,
             pageNum: page.currentPage,
             pageSize: page.pageSize,
           });
+          const rows = res.records ?? [];
+          // 如果列定义为空但数据有值，从第一行数据提取列名
+          if (columns.value.length === 0 && rows.length > 0) {
+            const keys = Object.keys(rows[0]);
+            if (keys.length > 0) {
+              applyColumns(keys);
+            }
+          }
           return {
-            rows: res.records ?? [],
-            total: res.total ?? 0,
+            rows,
+            total: res.total || rows.length,
           };
         } finally {
           loading.value = false;
@@ -182,19 +228,28 @@ async function setupOptions() {
   ]);
 }
 
+function applyColumns(cols: string[]) {
+  const tableColumns = cols.map((col) => ({
+    title: col,
+    field: col,
+    minWidth: 120,
+    showOverflow: 'tooltip',
+  }));
+  columns.value = tableColumns;
+  tableApi.setGridOptions({ columns: tableColumns });
+}
+
 async function loadColumns() {
   if (!queryForm.value.ledgerCode) return;
   try {
-    const cols = await hospitalQcDetailColumns(queryForm.value.ledgerCode);
-    // 根据返回的列名构建表格列
-    const tableColumns = cols.map((col) => ({
-      title: col,
-      field: col,
-      minWidth: 120,
-      showOverflow: 'tooltip',
-    }));
-    columns.value = tableColumns;
-    tableApi.gridApi.setGridOptions({ columns: tableColumns });
+    const cols = await hospitalQcDetailColumns(
+      queryForm.value.ledgerCode,
+      queryForm.value.nodeType || undefined,
+      queryForm.value.deptId,
+    );
+    if (cols && cols.length > 0) {
+      applyColumns(cols);
+    }
   } catch {
     // 使用默认列
   }
@@ -204,17 +259,20 @@ async function initFromRoute() {
   const ledgerCode = String(route.query.ledgerCode ?? '');
   const deptId = route.query.deptId ? Number(route.query.deptId) : undefined;
   const quarter = String(route.query.quarter ?? '');
+  const nodeType = String(route.query.nodeType ?? '');
 
   queryForm.value = {
     ledgerCode,
     deptId,
     quarter,
+    nodeType,
   };
 
   // 设置表单初始值
   await tableApi.formApi.setValues({
     ledgerCode,
     deptId,
+    quarter,
     ...timeRange.value,
   });
 
@@ -236,7 +294,7 @@ onMounted(async () => {
 
 <template>
   <Page :auto-content-height="true">
-    <BasicTable table-title="台账明细数据">
+    <BasicTable :table-title="detailTitle">
       <template #toolbar-tools>
         <a-button @click="goBack">返回</a-button>
       </template>

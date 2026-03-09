@@ -6,15 +6,23 @@ import dayjs from 'dayjs';
 const QUARTER_VALUE_PATTERN = /^\d{4}-Q[1-4]$/;
 const MONTH_VALUE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
-function quarterOptions() {
-  const currentYear = dayjs().year();
+export function quarterOptions() {
+  const now = dayjs();
+  const currentYear = now.year();
+  const currentQuarter = Math.ceil((now.month() + 1) / 3);
   const options: Array<{ label: string; value: string }> = [];
-  for (let year = currentYear; year >= currentYear - 2; year--) {
-    for (let quarter = 1; quarter <= 4; quarter++) {
-      options.push({
-        label: `${year}年Q${quarter}`,
-        value: `${year}-Q${quarter}`,
-      });
+
+  let year = currentYear;
+  let quarter = currentQuarter;
+  for (let i = 0; i < 12; i++) {
+    options.push({
+      label: `${year}年Q${quarter}`,
+      value: `${year}-Q${quarter}`,
+    });
+    quarter--;
+    if (quarter < 1) {
+      quarter = 4;
+      year--;
     }
   }
   return options;
@@ -59,7 +67,8 @@ export const reportQuerySchema: FormSchemaGetter = () => [
           return;
         }
         if (!QUARTER_VALUE_PATTERN.test(currentTimeValue)) {
-          model.timeValue = `${dayjs().year()}-Q1`;
+          const now = dayjs();
+          model.timeValue = `${now.year()}-Q${Math.ceil((now.month() + 1) / 3)}`;
         }
       },
     }),
@@ -73,7 +82,10 @@ export const reportQuerySchema: FormSchemaGetter = () => [
       allowClear: false,
       options: timeValueOptions(model.timeType),
     }),
-    defaultValue: `${dayjs().year()}-Q1`,
+    defaultValue: (() => {
+      const now = dayjs();
+      return `${now.year()}-Q${Math.ceil((now.month() + 1) / 3)}`;
+    })(),
     dependencies: {
       show: (values) => values.timeType !== 'custom',
       triggerFields: ['timeType'],
@@ -118,8 +130,8 @@ export const reportColumns: VxeGridProps['columns'] = [
   { title: '科室', field: 'deptName', width: 140 },
   { title: '台账编码', field: 'ledgerCode', width: 140 },
   { title: '台账名称', field: 'ledgerName', minWidth: 220 },
-  { title: '分子', field: 'numerator', width: 100 },
-  { title: '分母', field: 'denominator', width: 100 },
+  { title: '分子', field: 'numerator', width: 100, slots: { default: 'numerator' } },
+  { title: '分母', field: 'denominator', width: 100, slots: { default: 'denominator' } },
   { title: '百分比', field: 'percentDisplay', width: 110, className: 'metric-highlight' },
   { title: '环比增长', field: 'growthDisplay', width: 120, className: 'metric-highlight' },
   { title: '百分点变化', field: 'pointChangeDisplay', width: 120, className: 'metric-highlight' },

@@ -23,7 +23,9 @@ public interface IHospitalQcDetailService {
      * Query detail columns (for header configuration).
      *
      * @param ledgerCode ledger code
+     * @param nodeType   node type filter (N=numerator, D=denominator, null=any)
+     * @param deptId     department ID (optional, used to find dept-specific query config)
      * @return list of column names from detail SQL
      */
-    List<String> queryDetailColumns(String ledgerCode);
+    List<String> queryDetailColumns(String ledgerCode, String nodeType, Long deptId);
 }
