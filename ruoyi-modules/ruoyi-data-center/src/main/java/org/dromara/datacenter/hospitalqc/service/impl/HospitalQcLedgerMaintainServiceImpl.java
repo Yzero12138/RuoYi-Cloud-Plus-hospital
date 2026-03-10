@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +66,7 @@ public class HospitalQcLedgerMaintainServiceImpl implements IHospitalQcLedgerMai
         if (list == null || list.isEmpty()) {
             log.warn("Hospital QC ledger tree is empty for deptId={}. Please check table hospital_qc_ledger_item data.", bo.getDeptId());
         }
-        return buildTree(list);
+        return buildDeptGroupedTree(list, allowedDeptIds);
     }
 
     @Override
@@ -259,6 +260,55 @@ public class HospitalQcLedgerMaintainServiceImpl implements IHospitalQcLedgerMai
         lqw.orderByAsc(HospitalQcLedgerItem::getSortOrder);
         lqw.orderByAsc(HospitalQcLedgerItem::getId);
         return lqw;
+    }
+
+    private List<HospitalQcLedgerItemVo> buildDeptGroupedTree(List<HospitalQcLedgerItemVo> list, Set<Long> allowedDeptIds) {
+        // Group items by deptId
+        Map<Long, List<HospitalQcLedgerItemVo>> deptGroups = new LinkedHashMap<>();
+        Map<Long, String> deptNameMap = new HashMap<>();
+
+        if (list != null && !list.isEmpty()) {
+            for (HospitalQcLedgerItemVo item : list) {
+                Long deptId = Objects.requireNonNullElse(item.getDeptId(), 0L);
+                deptGroups.computeIfAbsent(deptId, k -> new ArrayList<>()).add(item);
+                if (item.getDeptName() != null) {
+                    deptNameMap.putIfAbsent(deptId, item.getDeptName());
+                }
+            }
+        }
+
+        // If no items and non-admin, still create empty dept root node
+        if (deptGroups.isEmpty() && !allowedDeptIds.isEmpty()) {
+            for (Long deptId : allowedDeptIds) {
+                deptGroups.put(deptId, new ArrayList<>());
+                String currentDeptName = HospitalQcDeptPermissionUtils.getCurrentDeptName();
+                deptNameMap.put(deptId, currentDeptName != null ? currentDeptName : ("科室" + deptId));
+            }
+        }
+
+        // Build dept-grouped tree with virtual department root nodes
+        List<HospitalQcLedgerItemVo> result = new ArrayList<>();
+        for (Map.Entry<Long, List<HospitalQcLedgerItemVo>> entry : deptGroups.entrySet()) {
+            Long deptId = entry.getKey();
+            List<HospitalQcLedgerItemVo> deptItems = entry.getValue();
+            List<HospitalQcLedgerItemVo> deptTree = buildTree(deptItems);
+
+            HospitalQcLedgerItemVo deptRoot = new HospitalQcLedgerItemVo();
+            deptRoot.setId(-deptId);
+            deptRoot.setParentId(null);
+            String deptName = deptNameMap.getOrDefault(deptId, "科室" + deptId);
+            deptRoot.setLedgerName(deptName);
+            deptRoot.setNodeType(HospitalQcConstants.NODE_TYPE_DEPT);
+            deptRoot.setDeptId(deptId);
+            deptRoot.setDeptName(deptName);
+            deptRoot.setChildren(deptTree);
+            deptRoot.setSortOrder(0);
+
+            result.add(deptRoot);
+        }
+
+        result.sort(Comparator.comparing(it -> Objects.requireNonNullElse(it.getDeptId(), 0L)));
+        return result;
     }
 
     private List<HospitalQcLedgerItemVo> buildTree(List<HospitalQcLedgerItemVo> list) {

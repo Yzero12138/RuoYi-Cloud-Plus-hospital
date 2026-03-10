@@ -76,14 +76,22 @@ const [LedgerQueryModal, queryModalApi] = useVbenModal({
 });
 
 const hasSelectedNode = computed(() => !!selectedLedger.value?.id);
+const isSelectedDeptNode = computed(() => selectedLedger.value?.nodeType === 'DEPT');
+const canEditOrDelete = computed(() => hasSelectedNode.value && !isSelectedDeptNode.value);
 
 function toTree(list: HospitalQcLedgerItem[] = []) {
-  return list.map((item) => ({
-    title: `${item.ledgerName ?? ''} [${item.nodeType ?? ''}]`,
-    key: item.id,
-    raw: item,
-    children: item.children?.length ? toTree(item.children) : undefined,
-  }));
+  return list.map((item) => {
+    const isDept = item.nodeType === 'DEPT';
+    return {
+      title: isDept
+        ? `${item.deptName ?? item.ledgerName ?? ''}`
+        : `${item.ledgerName ?? ''} [${item.nodeType ?? ''}]`,
+      key: item.id,
+      raw: item,
+      selectable: true,
+      children: item.children?.length ? toTree(item.children) : undefined,
+    };
+  });
 }
 
 function normalizeLedgerTree(list: HospitalQcLedgerItem[] = []) {
@@ -134,15 +142,21 @@ function handleAddRoot() {
 }
 
 function handleAddChild() {
-  if (!selectedLedger.value?.id) {
+  if (!selectedLedger.value) {
     return;
   }
-  itemDrawerApi.setData({ update: false, parentId: selectedLedger.value.id });
+  const selected = selectedLedger.value;
+  if (selected.nodeType === 'DEPT') {
+    // Adding root item under this department
+    itemDrawerApi.setData({ update: false, parentId: 0, deptId: selected.deptId });
+  } else {
+    itemDrawerApi.setData({ update: false, parentId: selected.id, deptId: selected.deptId });
+  }
   itemDrawerApi.open();
 }
 
 function handleEditNode() {
-  if (!selectedLedger.value?.id) {
+  if (!selectedLedger.value?.id || selectedLedger.value?.nodeType === 'DEPT') {
     return;
   }
   itemDrawerApi.setData({ update: true, id: selectedLedger.value.id });
@@ -150,7 +164,7 @@ function handleEditNode() {
 }
 
 async function handleDeleteNode() {
-  if (!selectedLedger.value?.id) {
+  if (!selectedLedger.value?.id || selectedLedger.value?.nodeType === 'DEPT') {
     return;
   }
   await hospitalQcLedgerMaintainRemove(selectedLedger.value.id);
@@ -222,7 +236,7 @@ onMounted(async () => {
             新增子节点
           </a-button>
           <a-button
-            :disabled="!hasSelectedNode"
+            :disabled="!canEditOrDelete"
             v-access:code="['data-center:hospital-qc:ledger-maintain:edit']"
             @click="handleEditNode"
           >
@@ -230,7 +244,7 @@ onMounted(async () => {
           </a-button>
           <Popconfirm title="确认删除选中节点及其子节点吗？" @confirm="handleDeleteNode">
             <a-button
-              :disabled="!hasSelectedNode"
+              :disabled="!canEditOrDelete"
               danger
               v-access:code="['data-center:hospital-qc:ledger-maintain:remove']"
             >

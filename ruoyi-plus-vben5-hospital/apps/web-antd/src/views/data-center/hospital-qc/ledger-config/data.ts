@@ -99,6 +99,20 @@ export const itemDrawerSchema: FormSchemaGetter = () => [
     fieldName: 'id',
   },
   {
+    component: 'Input',
+    dependencies: {
+      show: () => false,
+      triggerFields: [''],
+    },
+    fieldName: 'deptName',
+  },
+  {
+    component: 'TreeSelect',
+    fieldName: 'deptId',
+    label: '科室',
+    rules: 'required',
+  },
+  {
     component: 'TreeSelect',
     fieldName: 'parentId',
     label: '父节点',

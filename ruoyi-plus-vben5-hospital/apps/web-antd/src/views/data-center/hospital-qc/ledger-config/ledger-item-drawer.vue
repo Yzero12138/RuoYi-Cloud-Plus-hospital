@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
 import { $t } from '@vben/locales';
-import { cloneDeep, getPopupContainer } from '@vben/utils';
+import { addFullName, cloneDeep, getPopupContainer, listToTree } from '@vben/utils';
 
 import { useVbenForm } from '#/adapter/form';
 import {
@@ -13,6 +13,7 @@ import {
   hospitalQcLedgerMaintainUpdate,
 } from '#/api/data-center/hospital-qc/ledger-maintain';
 import { hospitalQcLedgerQueryOptions } from '#/api/data-center/hospital-qc/ledger-query';
+import { deptList } from '#/api/system/dept';
 import { defaultFormValueGetter, useBeforeCloseDiff } from '#/utils/popup';
 
 import { itemDrawerSchema } from './data';
@@ -20,6 +21,7 @@ import { itemDrawerSchema } from './data';
 interface DrawerProps {
   id?: number;
   parentId?: number;
+  deptId?: number;
   update: boolean;
 }
 
@@ -27,6 +29,8 @@ interface TreeNode {
   id?: number;
   ledgerCode?: string;
   ledgerName?: string;
+  nodeType?: string;
+  deptId?: number;
   children?: TreeNode[];
 }
 
@@ -60,13 +64,77 @@ function buildTreeOptions(list: TreeNode[] = []) {
   });
 }
 
+function extractItemsFromDeptNodes(list: TreeNode[]): TreeNode[] {
+  const items: TreeNode[] = [];
+  for (const item of list) {
+    if (item.nodeType === 'DEPT') {
+      if (item.children) {
+        items.push(...item.children);
+      }
+    } else {
+      items.push(item);
+    }
+  }
+  return items;
+}
+
+const deptNameMap = new Map<number, string>();
+
+async function setupDeptSelect() {
+  const deptArray = await deptList({});
+  const treeData = listToTree(deptArray, { id: 'deptId', pid: 'parentId' });
+  addFullName(treeData, 'deptName', ' / ');
+  deptNameMap.clear();
+
+  const fillMap = (nodes?: any[]) => {
+    if (!nodes) return;
+    nodes.forEach((node) => {
+      if (node?.deptId) {
+        deptNameMap.set(node.deptId, node.fullName ?? node.deptName);
+      }
+      if (node?.children?.length) {
+        fillMap(node.children);
+      }
+    });
+  };
+  fillMap(treeData);
+
+  formApi.updateSchema([
+    {
+      componentProps: {
+        fieldNames: {
+          label: 'deptName',
+          value: 'deptId',
+        },
+        getPopupContainer,
+        listHeight: 300,
+        showSearch: true,
+        treeData,
+        treeDefaultExpandAll: false,
+        treeLine: { showLeafIcon: false },
+        treeNodeFilterProp: 'deptName',
+        treeNodeLabelProp: 'fullName',
+        onChange: (value: number | null) => {
+          if (!value) {
+            formApi.setFieldValue('deptName', undefined);
+            return;
+          }
+          formApi.setFieldValue('deptName', deptNameMap.get(value));
+        },
+      },
+      fieldName: 'deptId',
+    },
+  ]);
+}
+
 async function setupParentSelect() {
   const list = await hospitalQcLedgerMaintainList();
+  const items = extractItemsFromDeptNodes(list as TreeNode[]);
   const treeData = [
     {
       label: '根节点',
       value: 0,
-      children: buildTreeOptions(list),
+      children: buildTreeOptions(items),
     },
   ];
   formApi.updateSchema([
@@ -125,10 +193,10 @@ const [BasicDrawer, drawerApi] = useVbenDrawer({
     }
     drawerApi.drawerLoading(true);
 
-    const { id, parentId, update } = drawerApi.getData() as DrawerProps;
+    const { id, parentId, deptId, update } = drawerApi.getData() as DrawerProps;
     isUpdate.value = update;
 
-    await Promise.all([setupParentSelect(), setupQueryOptions()]);
+    await Promise.all([setupDeptSelect(), setupParentSelect(), setupQueryOptions()]);
 
     if (id && update) {
       const record = await hospitalQcLedgerMaintainInfo(id);
@@ -136,6 +204,7 @@ const [BasicDrawer, drawerApi] = useVbenDrawer({
     } else {
       await formApi.setValues({
         parentId: parentId ?? 0,
+        deptId: deptId,
         queryCode: 'NONE',
         status: 0,
       });

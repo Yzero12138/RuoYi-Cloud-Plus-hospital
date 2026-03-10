@@ -3,8 +3,10 @@
   parentId?: number;
   ledgerCode?: string;
   ledgerName?: string;
-  nodeType?: 'I' | 'N' | 'D' | string;
+  nodeType?: 'I' | 'N' | 'D' | 'DEPT' | string;
   queryCode?: string;
+  deptId?: number;
+  deptName?: string;
   sortOrder?: number;
   status?: number;
   remark?: string;
@@ -22,6 +24,8 @@ export interface HospitalQcLedgerItemForm {
   ledgerName?: string;
   nodeType?: 'I' | 'N' | 'D' | string;
   queryCode?: string;
+  deptId?: number;
+  deptName?: string;
   sortOrder?: number;
   status?: number;
   remark?: string;

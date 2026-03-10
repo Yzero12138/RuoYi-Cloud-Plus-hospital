@@ -8,6 +8,7 @@ public interface HospitalQcConstants {
     String NODE_TYPE_INDICATOR = "I";
     String NODE_TYPE_NUMERATOR = "N";
     String NODE_TYPE_DENOMINATOR = "D";
+    String NODE_TYPE_DEPT = "DEPT";
 
     String QUERY_CODE_NONE = "NONE";
 
