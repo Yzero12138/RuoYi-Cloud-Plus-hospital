@@ -21,6 +21,7 @@ const route = useRoute();
 const router = useRouter();
 
 type HospitalQcReportRowWithKey = HospitalQcReportRow & { rowKey: string };
+const YEAR_VALUE_PATTERN = /^\d{4}$/;
 const QUARTER_VALUE_PATTERN = /^\d{4}-Q[1-4]$/;
 const MONTH_VALUE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
@@ -122,13 +123,17 @@ async function initFromRoute() {
   const currentYear = new Date().getFullYear();
   const rawTimeType = String(route.query.timeType ?? 'quarter');
   const timeType =
-    rawTimeType === 'month' || rawTimeType === 'custom' || rawTimeType === 'quarter'
+    rawTimeType === 'year' || rawTimeType === 'month' || rawTimeType === 'custom' || rawTimeType === 'quarter'
       ? rawTimeType
       : 'quarter';
   const rawTimeValue = String(route.query.timeValue ?? '');
   const currentQuarter = Math.ceil((dayjs().month() + 1) / 3);
   let timeValue = `${currentYear}-Q${currentQuarter}`;
-  if (timeType === 'month') {
+  if (timeType === 'year') {
+    timeValue = YEAR_VALUE_PATTERN.test(rawTimeValue)
+      ? rawTimeValue
+      : String(currentYear);
+  } else if (timeType === 'month') {
     timeValue = MONTH_VALUE_PATTERN.test(rawTimeValue)
       ? rawTimeValue
       : dayjs().format('YYYY-MM');

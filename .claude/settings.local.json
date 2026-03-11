@@ -6,7 +6,24 @@
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__navigate_page",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_screenshot",
       "mcp__plugin_chrome-devtools-mcp_chrome-devtools__evaluate_script",
-      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__get_network_request"
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__get_network_request",
+      "Bash(pnpm run:*)",
+      "Bash(grep:*)",
+      "Bash(xargs cat:*)",
+      "Bash(xargs wc:*)",
+      "Bash(for icon in \"icons-mdi/keyboard-esc\" \"icons-mdi/github\" \"icons-mdi/google\" \"icons-mdi/qqchat\" \"icons-mdi/wechat\")",
+      "Bash(do echo -n \"$icon: \")",
+      "Read(//f/my/RuoYi-Cloud-Plus-hospital/ruoyi-plus-vben5-hospital/packages/icons/node_modules/@iconify/**)",
+      "Bash(done)",
+      "Bash(mkdir:*)",
+      "Bash(rm:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm:*)",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_pages",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_console_messages",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__list_network_requests",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__emulate",
+      "mcp__plugin_chrome-devtools-mcp_chrome-devtools__take_snapshot"
     ]
   }
 }

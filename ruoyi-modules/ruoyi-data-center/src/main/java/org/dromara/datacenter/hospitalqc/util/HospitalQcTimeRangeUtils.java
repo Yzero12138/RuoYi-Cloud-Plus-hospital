@@ -31,10 +31,23 @@ public final class HospitalQcTimeRangeUtils {
             }
             return new DateRange(startTime, endTime, "自定义");
         }
+        if (HospitalQcConstants.TIME_TYPE_YEAR.equals(timeType)) {
+            return parseYearRange(timeValue);
+        }
         if (HospitalQcConstants.TIME_TYPE_MONTH.equals(timeType)) {
             return parseMonthRange(timeValue);
         }
         return parseQuarterRange(timeValue);
+    }
+
+    public static DateRange parseYearRange(String value) {
+        if (StringUtils.isBlank(value) || !value.matches("^\\d{4}$")) {
+            throw new ServiceException("年份格式错误，示例：2026");
+        }
+        int year = Integer.parseInt(value);
+        LocalDateTime start = LocalDate.of(year, 1, 1).atStartOfDay();
+        LocalDateTime end = LocalDate.of(year, 12, 31).atTime(23, 59, 59);
+        return new DateRange(toDate(start), toDate(end), value);
     }
 
     public static DateRange previousRange(DateRange range) {

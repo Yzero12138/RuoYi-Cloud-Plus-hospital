@@ -99,15 +99,7 @@ async function handleClosed() {
         <div class="ml-7 w-full">
           <Alert show-icon type="warning">
             <template #message>
-              私有桶(minio)使用自定义域名需要参考
-              <a
-                href="https://gitee.com/dromara/RuoYi-Vue-Plus/issues/IBQIKC"
-                target="_blank"
-                class="text-primary"
-              >
-                支持minio预览私有桶
-              </a>
-              , 否则无法预览
+              私有桶(minio)使用自定义域名需要配置支持minio预览私有桶, 否则无法预览
             </template>
           </Alert>
         </div>

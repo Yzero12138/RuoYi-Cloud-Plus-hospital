@@ -224,6 +224,12 @@ interface ApplicationPluginOptions extends CommonPluginOptions {
    */
   i18n?: boolean;
   /**
+   * 是否开启旧浏览器兼容（Chrome 71等）
+   * @default false
+   * @description 使用 @vitejs/plugin-legacy 生成兼容代码
+   */
+  legacy?: boolean;
+  /**
    * 是否开启 ImportMap CDN
    * @default false
    */

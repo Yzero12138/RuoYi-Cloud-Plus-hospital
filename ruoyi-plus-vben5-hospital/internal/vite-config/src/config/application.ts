@@ -36,6 +36,7 @@ function defineApplicationConfig(userConfigPromise?: DefineApplicationOptions) {
       i18n: true,
       importmapOptions: defaultImportmapOptions,
       injectAppLoading: true,
+      legacy: true,
       injectMetadata: true,
       isBuild,
       license: true,
@@ -44,7 +45,7 @@ function defineApplicationConfig(userConfigPromise?: DefineApplicationOptions) {
       nitroMockOptions: {},
       print: !isBuild,
       printInfoMap: {
-        'Vben Admin Docs': 'https://doc.vben.pro',
+        'Vben Admin Docs': '#',
       },
       pwa: true,
       pwaOptions: getDefaultPwaOptions(appTitle),

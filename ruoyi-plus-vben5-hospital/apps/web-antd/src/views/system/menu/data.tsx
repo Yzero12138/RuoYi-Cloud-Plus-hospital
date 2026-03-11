@@ -200,13 +200,13 @@ export const drawerSchema: FormSchemaGetter = () => [
     renderComponentContent: (model) => ({
       addonBefore: () => <VbenIcon icon={model.icon} />,
       addonAfter: () => (
-        <a href="https://icon-sets.iconify.design/" target="_blank">
-          搜索图标
-        </a>
+        <span class="text-muted-foreground text-xs">
+          参考 iconify 图标名称
+        </span>
       ),
     }),
     fieldName: 'icon',
-    help: '点击搜索图标跳转到iconify & 粘贴',
+    help: '填写 iconify 图标名称，如: lucide:home',
     label: '菜单图标',
   },
   {

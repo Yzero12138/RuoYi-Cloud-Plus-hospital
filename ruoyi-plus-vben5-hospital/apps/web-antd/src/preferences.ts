@@ -17,9 +17,9 @@ export const overridesPreferences = defineOverridesPreferences({
      */
     enableRefreshToken: false,
     /**
-     * 这里可以设置默认头像 url链接或vite导入的图片链接
+     * 默认头像 本地化
      */
-    // defaultAvatar: '',
+    defaultAvatar: '/images/avatar-v1.webp',
     /**
      * 在这里设置应用标题
      */
@@ -65,8 +65,8 @@ export const overridesPreferences = defineOverridesPreferences({
    *
    * !!! 更改配置后请清空浏览器缓存
    */
-  // logo: {
-  //   enable: true,
-  //   source: '',
-  // },
+  logo: {
+    enable: true,
+    source: '/images/logo-v1.webp',
+  },
 });

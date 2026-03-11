@@ -3,7 +3,7 @@ import type { UserProfile } from '#/api/system/profile/model';
 
 import { computed } from 'vue';
 
-import { preferences, usePreferences } from '@vben/preferences';
+import { preferences } from '@vben/preferences';
 
 import {
   Card,
@@ -26,12 +26,6 @@ defineEmits<{
 const avatar = computed(
   () => props.profile?.user.avatar || preferences.app.defaultAvatar,
 );
-
-const { isDark } = usePreferences();
-const poetrySrc = computed(() => {
-  const color = isDark.value ? 'white' : 'gray';
-  return `https://v2.jinrishici.com/one.svg?font-size=12&color=${color}`;
-});
 </script>
 
 <template>
@@ -51,8 +45,7 @@ const poetrySrc = computed(() => {
           <span class="text-foreground text-xl font-bold">
             {{ profile.user.nickName ?? '未知' }}
           </span>
-          <!-- https://www.jinrishici.com/doc/#image -->
-          <img :src="poetrySrc" />
+          <span class="text-muted-foreground text-sm">欢迎使用医院质控管理系统</span>
         </div>
       </div>
       <div class="px-[24px]">

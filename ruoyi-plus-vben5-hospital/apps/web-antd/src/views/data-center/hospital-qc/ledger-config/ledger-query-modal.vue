@@ -64,6 +64,9 @@ const deptNameMap = new Map<number, string>();
 
 const [BasicForm, formApi] = useVbenForm({
   commonConfig: {
+    componentProps: {
+      class: 'w-full',
+    },
     labelWidth: 92,
   },
   schema: queryModalSchema(),

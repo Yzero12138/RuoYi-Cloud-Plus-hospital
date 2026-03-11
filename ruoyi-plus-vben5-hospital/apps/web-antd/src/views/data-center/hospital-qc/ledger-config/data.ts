@@ -191,6 +191,7 @@ export const queryModalSchema: FormSchemaGetter = () => [
   {
     component: 'TreeSelect',
     fieldName: 'deptId',
+    formItemClass: 'col-span-2',
     label: '科室',
   },
   {

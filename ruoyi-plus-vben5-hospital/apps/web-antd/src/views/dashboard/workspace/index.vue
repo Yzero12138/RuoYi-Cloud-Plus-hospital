@@ -36,7 +36,7 @@ const projectItems: WorkbenchProjectItem[] = [
     group: '开源组',
     icon: 'carbon:logo-github',
     title: 'Github',
-    url: 'https://github.com',
+    url: '#',
   },
   {
     color: '#3fb27f',
@@ -45,7 +45,7 @@ const projectItems: WorkbenchProjectItem[] = [
     group: '算法组',
     icon: 'ion:logo-vue',
     title: 'Vue',
-    url: 'https://vuejs.org',
+    url: '#',
   },
   {
     color: '#e18525',
@@ -54,7 +54,7 @@ const projectItems: WorkbenchProjectItem[] = [
     group: '上班摸鱼',
     icon: 'ion:logo-html5',
     title: 'Html5',
-    url: 'https://developer.mozilla.org/zh-CN/docs/Web/HTML',
+    url: '#',
   },
   {
     color: '#bf0c2c',
@@ -63,7 +63,7 @@ const projectItems: WorkbenchProjectItem[] = [
     group: 'UI',
     icon: 'ion:logo-angular',
     title: 'Angular',
-    url: 'https://angular.io',
+    url: '#',
   },
   {
     color: '#00d8ff',
@@ -72,7 +72,7 @@ const projectItems: WorkbenchProjectItem[] = [
     group: '技术牛',
     icon: 'bx:bxl-react',
     title: 'React',
-    url: 'https://reactjs.org',
+    url: '#',
   },
   {
     color: '#EBD94E',
@@ -81,7 +81,7 @@ const projectItems: WorkbenchProjectItem[] = [
     group: '架构组',
     icon: 'ion:logo-javascript',
     title: 'Js',
-    url: 'https://developer.mozilla.org/zh-CN/docs/Web/JavaScript',
+    url: '#',
   },
 ];
 

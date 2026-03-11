@@ -12,6 +12,7 @@ public interface HospitalQcConstants {
 
     String QUERY_CODE_NONE = "NONE";
 
+    String TIME_TYPE_YEAR = "year";
     String TIME_TYPE_QUARTER = "quarter";
     String TIME_TYPE_MONTH = "month";
     String TIME_TYPE_CUSTOM = "custom";

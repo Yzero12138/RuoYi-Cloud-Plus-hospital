@@ -3,8 +3,20 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import dayjs from 'dayjs';
 
+const YEAR_VALUE_PATTERN = /^\d{4}$/;
 const QUARTER_VALUE_PATTERN = /^\d{4}-Q[1-4]$/;
 const MONTH_VALUE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+function yearOptions() {
+  const currentYear = dayjs().year();
+  return Array.from({ length: 4 }).map((_, index) => {
+    const year = currentYear - index;
+    return {
+      label: `${year}年`,
+      value: String(year),
+    };
+  });
+}
 
 export function quarterOptions() {
   const now = dayjs();
@@ -39,6 +51,9 @@ function monthOptions() {
 }
 
 function timeValueOptions(type?: string) {
+  if (type === 'year') {
+    return yearOptions();
+  }
   if (type === 'month') {
     return monthOptions();
   }
@@ -51,6 +66,7 @@ export const reportQuerySchema: FormSchemaGetter = () => [
     componentProps: (model) => ({
       allowClear: false,
       options: [
+        { label: '年度', value: 'year' },
         { label: '季度', value: 'quarter' },
         { label: '月份', value: 'month' },
         { label: '自定义', value: 'custom' },
@@ -60,6 +76,12 @@ export const reportQuerySchema: FormSchemaGetter = () => [
           return;
         }
         const currentTimeValue = String(model.timeValue ?? '');
+        if (value === 'year') {
+          if (!YEAR_VALUE_PATTERN.test(currentTimeValue)) {
+            model.timeValue = String(dayjs().year());
+          }
+          return;
+        }
         if (value === 'month') {
           if (!MONTH_VALUE_PATTERN.test(currentTimeValue)) {
             model.timeValue = dayjs().format('YYYY-MM');

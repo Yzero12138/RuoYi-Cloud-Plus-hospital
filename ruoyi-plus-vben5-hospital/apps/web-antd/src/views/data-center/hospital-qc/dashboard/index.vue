@@ -15,7 +15,12 @@ import {
 } from '#/api/data-center/hospital-qc/dashboard';
 
 import LedgerChartCard from './LedgerChartCard.vue';
-import { buildYearOptions } from './data';
+import {
+  type TimeDimension,
+  buildTimeValueOptions,
+  getDefaultTimeValue,
+  timeDimensionOptions,
+} from './data';
 
 const router = useRouter();
 
@@ -26,8 +31,13 @@ const options = ref<HospitalQcDashboardFilterOptions>({
 });
 
 const queryForm = ref({
-  year: new Date().getFullYear(),
+  timeDimension: 'quarter' as TimeDimension,
+  timeValue: getDefaultTimeValue('quarter'),
   ledgerCodes: [] as string[],
+});
+
+const timeValueOptionsList = computed(() => {
+  return buildTimeValueOptions(queryForm.value.timeDimension);
 });
 
 const overview = ref<HospitalQcDashboardOverview>();
@@ -40,9 +50,13 @@ const currentDeptId = computed(() => {
   return options.value.currentDeptId;
 });
 
+const queryYear = computed(() => {
+  return parseInt(queryForm.value.timeValue, 10) || new Date().getFullYear();
+});
+
 const latestQuarter = computed(() => {
   const quarters = overview.value?.quarters ?? [];
-  return quarters.length ? quarters[quarters.length - 1] : `${queryForm.value.year}-Q4`;
+  return quarters.length ? quarters[quarters.length - 1] : `${queryYear.value}-Q4`;
 });
 
 async function loadOptions() {
@@ -61,11 +75,11 @@ async function loadOverview() {
   if (!currentDeptId.value) {
     return;
   }
-  
+
   loading.value = true;
   try {
     const data = await hospitalQcDashboardOverview({
-      year: queryForm.value.year,
+      year: queryYear.value,
       deptIds: [currentDeptId.value],
       ledgerCodes: queryForm.value.ledgerCodes.length > 0 ? queryForm.value.ledgerCodes : undefined,
     });
@@ -77,18 +91,23 @@ async function loadOverview() {
 
 function handleReset() {
   queryForm.value = {
-    year: new Date().getFullYear(),
+    timeDimension: 'quarter',
+    timeValue: getDefaultTimeValue('quarter'),
     ledgerCodes: [],
   };
   loadOverview();
+}
+
+function onTimeDimensionChange(val: TimeDimension) {
+  queryForm.value.timeValue = getDefaultTimeValue(val);
 }
 
 function goReport() {
   router.push({
     path: '/data-center/hospital-qc/report',
     query: {
-      timeType: 'quarter',
-      timeValue: latestQuarter.value,
+      timeType: queryForm.value.timeDimension,
+      timeValue: queryForm.value.timeValue,
       deptIds: String(currentDeptId.value),
       ledgerCodes: queryForm.value.ledgerCodes.join(','),
     },
@@ -105,11 +124,19 @@ onMounted(async () => {
   <Page :auto-content-height="true">
     <a-card :bordered="false" class="mb-3">
       <a-form layout="inline">
-        <a-form-item label="年份">
+        <a-form-item label="时间维度">
           <a-select
-            v-model:value="queryForm.year"
-            :options="buildYearOptions()"
-            style="width: 120px"
+            v-model:value="queryForm.timeDimension"
+            :options="timeDimensionOptions()"
+            style="width: 100px"
+            @change="onTimeDimensionChange"
+          />
+        </a-form-item>
+        <a-form-item label="时间">
+          <a-select
+            v-model:value="queryForm.timeValue"
+            :options="timeValueOptionsList"
+            style="width: 140px"
           />
         </a-form-item>
         <a-form-item label="台账筛选">

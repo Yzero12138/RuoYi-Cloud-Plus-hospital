@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import type { VbenFormProps } from '@vben/common-ui';
 
 import type { VxeGridProps } from '#/adapter/vxe-table';
@@ -7,10 +7,19 @@ import type { HospitalQcLedgerQueryItem } from '#/api/data-center/hospital-qc/le
 
 import { computed, onMounted, ref } from 'vue';
 
-import { Page, useVbenDrawer, useVbenModal } from '@vben/common-ui';
+import { ColPage, useVbenDrawer, useVbenModal } from '@vben/common-ui';
 import { getVxePopupContainer, listToTree } from '@vben/utils';
 
-import { Card, Empty, Popconfirm, Space, Tree, message } from 'ant-design-vue';
+import {
+  Card,
+  Divider,
+  Empty,
+  Popconfirm,
+  Space,
+  Tooltip,
+  Tree,
+  message,
+} from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
@@ -42,7 +51,7 @@ const formOptions: VbenFormProps = {
 
 const gridOptions: VxeGridProps = {
   columns: queryGridColumns,
-  height: 560,
+  height: 'auto',
   keepSource: true,
   pagerConfig: {},
   proxyConfig: {
@@ -76,8 +85,12 @@ const [LedgerQueryModal, queryModalApi] = useVbenModal({
 });
 
 const hasSelectedNode = computed(() => !!selectedLedger.value?.id);
-const isSelectedDeptNode = computed(() => selectedLedger.value?.nodeType === 'DEPT');
-const canEditOrDelete = computed(() => hasSelectedNode.value && !isSelectedDeptNode.value);
+const isSelectedDeptNode = computed(
+  () => selectedLedger.value?.nodeType === 'DEPT',
+);
+const canEditOrDelete = computed(
+  () => hasSelectedNode.value && !isSelectedDeptNode.value,
+);
 
 function toTree(list: HospitalQcLedgerItem[] = []) {
   return list.map((item) => {
@@ -98,11 +111,16 @@ function normalizeLedgerTree(list: HospitalQcLedgerItem[] = []) {
   if (!list?.length) {
     return [];
   }
-  const hasNestedChildren = list.some((item) => (item.children?.length ?? 0) > 0);
+  const hasNestedChildren = list.some(
+    (item) => (item.children?.length ?? 0) > 0,
+  );
   if (hasNestedChildren) {
     return list;
   }
-  return listToTree(list as any[], { id: 'id', pid: 'parentId' }) as HospitalQcLedgerItem[];
+  return listToTree(list as any[], {
+    id: 'id',
+    pid: 'parentId',
+  }) as HospitalQcLedgerItem[];
 }
 
 function resolveLedgerList(payload: unknown): HospitalQcLedgerItem[] {
@@ -147,10 +165,17 @@ function handleAddChild() {
   }
   const selected = selectedLedger.value;
   if (selected.nodeType === 'DEPT') {
-    // Adding root item under this department
-    itemDrawerApi.setData({ update: false, parentId: 0, deptId: selected.deptId });
+    itemDrawerApi.setData({
+      update: false,
+      parentId: 0,
+      deptId: selected.deptId,
+    });
   } else {
-    itemDrawerApi.setData({ update: false, parentId: selected.id, deptId: selected.deptId });
+    itemDrawerApi.setData({
+      update: false,
+      parentId: selected.id,
+      deptId: selected.deptId,
+    });
   }
   itemDrawerApi.open();
 }
@@ -196,10 +221,31 @@ onMounted(async () => {
 </script>
 
 <template>
-  <Page :auto-content-height="true">
-    <div class="grid grid-cols-12 gap-3">
-      <Card class="col-span-12 lg:col-span-4" title="台账树配置" :bordered="false">
-        <div class="mb-3 flex flex-wrap gap-2">
+  <ColPage
+    :auto-content-height="true"
+    :left-min-width="18"
+    :left-max-width="45"
+    :left-width="28"
+    :right-width="72"
+    :split-handle="true"
+    :split-line="true"
+  >
+    <template #left>
+      <Card
+        class="ledger-tree-card mr-2 h-full"
+        title="台账树配置"
+        :bordered="false"
+        size="small"
+      >
+        <template #extra>
+          <Tooltip title="刷新">
+            <a-button size="small" type="text" @click="reloadTree">
+              刷新
+            </a-button>
+          </Tooltip>
+        </template>
+
+        <div class="mb-3 flex flex-wrap items-center gap-1">
           <a-button
             size="small"
             type="primary"
@@ -208,91 +254,107 @@ onMounted(async () => {
           >
             新增根节点
           </a-button>
-          <a-button size="small" @click="reloadTree">刷新</a-button>
-        </div>
-        <div class="mb-2 text-xs text-gray-500">节点数：{{ treeData.length }}</div>
-
-        <Tree
-          v-if="treeData.length > 0"
-          class="hospital-qc-ledger-tree"
-          :field-names="{ children: 'children', key: 'key', title: 'title' }"
-          :tree-data="treeData"
-          :virtual="false"
-          block-node
-          default-expand-all
-          @select="handleTreeSelect"
-        />
-        <Empty
-          v-else
-          :description="'暂无台账节点，请先点击“新增根节点”创建台账树'"
-        />
-
-        <div class="mt-3 flex flex-wrap gap-2">
           <a-button
+            size="small"
             :disabled="!hasSelectedNode"
             v-access:code="['data-center:hospital-qc:ledger-maintain:add']"
             @click="handleAddChild"
           >
             新增子节点
           </a-button>
+
+          <Divider type="vertical" class="!mx-0.5" />
+
           <a-button
+            size="small"
             :disabled="!canEditOrDelete"
             v-access:code="['data-center:hospital-qc:ledger-maintain:edit']"
             @click="handleEditNode"
           >
-            编辑节点
+            编辑
           </a-button>
-          <Popconfirm title="确认删除选中节点及其子节点吗？" @confirm="handleDeleteNode">
+          <Popconfirm
+            title="确认删除选中节点及其子节点吗？"
+            @confirm="handleDeleteNode"
+          >
             <a-button
+              size="small"
               :disabled="!canEditOrDelete"
               danger
               v-access:code="['data-center:hospital-qc:ledger-maintain:remove']"
             >
-              删除节点
+              删除
             </a-button>
           </Popconfirm>
         </div>
-      </Card>
 
-      <Card class="col-span-12 lg:col-span-8" title="SQL 查询配置" :bordered="false">
-        <QueryTable>
-          <template #toolbar-tools>
-            <a-button
-              type="primary"
-              v-access:code="['data-center:hospital-qc:ledger-query:add']"
-              @click="handleAddQuery"
+        <div class="ledger-tree-wrapper">
+          <Tree
+            v-if="treeData.length > 0"
+            class="hospital-qc-ledger-tree"
+            :field-names="{
+              children: 'children',
+              key: 'key',
+              title: 'title',
+            }"
+            :tree-data="treeData"
+            :virtual="false"
+            block-node
+            default-expand-all
+            @select="handleTreeSelect"
+          />
+          <Empty
+            v-else
+            description="暂无台账节点，请点击「新增根节点」创建"
+            :image="Empty.PRESENTED_IMAGE_SIMPLE"
+          />
+        </div>
+      </Card>
+    </template>
+
+    <Card
+      class="ledger-query-card ml-2 h-full"
+      title="SQL 查询配置"
+      :bordered="false"
+      size="small"
+    >
+      <QueryTable>
+        <template #toolbar-tools>
+          <a-button
+            type="primary"
+            v-access:code="['data-center:hospital-qc:ledger-query:add']"
+            @click="handleAddQuery"
+          >
+            新增查询配置
+          </a-button>
+        </template>
+
+        <template #action="{ row }">
+          <Space>
+            <ghost-button
+              v-access:code="['data-center:hospital-qc:ledger-query:edit']"
+              @click.stop="handleEditQuery(row)"
             >
-              新增查询配置
-            </a-button>
-          </template>
-
-          <template #action="{ row }">
-            <Space>
+              {{ $t('pages.common.edit') }}
+            </ghost-button>
+            <Popconfirm
+              :get-popup-container="getVxePopupContainer"
+              placement="left"
+              title="确认删除吗？"
+              @confirm="handleDeleteQuery(row)"
+            >
               <ghost-button
-                v-access:code="['data-center:hospital-qc:ledger-query:edit']"
-                @click.stop="handleEditQuery(row)"
+                danger
+                v-access:code="['data-center:hospital-qc:ledger-query:remove']"
+                @click.stop=""
               >
-                {{ $t('pages.common.edit') }}
+                {{ $t('pages.common.delete') }}
               </ghost-button>
-              <Popconfirm
-                :get-popup-container="getVxePopupContainer"
-                placement="left"
-                title="确认删除吗？"
-                @confirm="handleDeleteQuery(row)"
-              >
-                <ghost-button
-                  danger
-                  v-access:code="['data-center:hospital-qc:ledger-query:remove']"
-                  @click.stop=""
-                >
-                  {{ $t('pages.common.delete') }}
-                </ghost-button>
-              </Popconfirm>
-            </Space>
-          </template>
-        </QueryTable>
-      </Card>
-    </div>
+            </Popconfirm>
+          </Space>
+        </template>
+      </QueryTable>
+    </Card>
 
     <LedgerItemDrawer
       @reload="
@@ -303,12 +365,25 @@ onMounted(async () => {
       "
     />
     <LedgerQueryModal @reload="queryTableApi.query()" />
-  </Page>
+  </ColPage>
 </template>
 
 <style scoped>
+.ledger-tree-card :deep(.ant-card-body) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: calc(100% - 40px);
+}
+
+.ledger-tree-wrapper {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
 .hospital-qc-ledger-tree {
-  min-height: 120px;
+  min-height: 80px;
 }
 
 .hospital-qc-ledger-tree :deep(.ant-tree-node-content-wrapper) {
@@ -317,5 +392,12 @@ onMounted(async () => {
 
 .hospital-qc-ledger-tree :deep(.ant-tree-title) {
   color: inherit;
+}
+
+.ledger-query-card :deep(.ant-card-body) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: calc(100% - 40px);
 }
 </style>

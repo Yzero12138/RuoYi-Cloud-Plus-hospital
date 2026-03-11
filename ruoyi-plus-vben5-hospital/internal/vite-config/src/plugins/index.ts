@@ -8,6 +8,7 @@ import type {
 } from '../typing';
 
 import viteVueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
+import viteLegacy from '@vitejs/plugin-legacy';
 import viteVue from '@vitejs/plugin-vue';
 import viteVueJsx from '@vitejs/plugin-vue-jsx';
 import { visualizer as viteVisualizerPlugin } from 'rollup-plugin-visualizer';
@@ -103,6 +104,7 @@ async function loadApplicationPlugins(
     importmap,
     importmapOptions,
     injectAppLoading,
+    legacy,
     license,
     nitroMock,
     nitroMockOptions,
@@ -205,6 +207,16 @@ async function loadApplicationPlugins(
       condition: isBuild && extraAppConfig,
       plugins: async () => [
         await viteExtraAppConfigPlugin({ isBuild: true, root: process.cwd() }),
+      ],
+    },
+    {
+      condition: isBuild && !!legacy,
+      plugins: () => [
+        viteLegacy({
+          targets: ['Chrome >= 64'],
+          additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
+          modernPolyfills: true,
+        }),
       ],
     },
     {

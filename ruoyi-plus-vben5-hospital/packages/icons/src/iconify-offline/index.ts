@@ -40,7 +40,15 @@ import githubOAuthIcon from '@iconify/icons-uiw/github';
 import excelIcon from '@iconify/icons-vscode-icons/file-type-excel';
 import osxIcon from '@iconify/icons-wpf/macos';
 
+import worldClock from '@iconify/icons-fluent-mdl2/world-clock';
+
 import './menu-icons';
+
+// 时区图标
+export const TimezoneIcon = createIconifyOfflineIcon(
+  'fluent-mdl2:world-clock',
+  worldClock,
+);
 
 // 用户 下拉菜单
 export const GitHubOutlined = createIconifyOfflineIcon(
